@@ -1,0 +1,411 @@
+"""
+Détection de Somnolence — MediaPipe Face Mesh
+==============================================
+Analyse le flux caméra en temps réel avec MediaPipe (468 landmarks 3D).
+Plus rapide que dlib sur Raspberry Pi (pas de modèle .dat externe requis).
+
+Niveaux de somnolence :
+  0 = éveillé
+  1 = somnole  (EAR < seuil pendant EAR_FRAMES_SEUIL frames consécutives)
+  2 = dort     (niveau 1 persistant > DELAI_NV2 secondes sans réaction)
+  3 = urgence  (niveau 2 persistant > DELAI_NV3 secondes → parking auto)
+
+Indicateurs :
+  - EAR  (Eye Aspect Ratio)         — ouverture des yeux
+  - MAR  (Mouth Aspect Ratio)        — bâillements
+  - PERCLOS (% frames yeux fermés)   — indicateur cumulatif fiabilisé
+  - Head pose (roulis/tangage)        — inclinaison tête via solvePnP 3D
+
+Références datasets :
+  - NTHU-DDD  : seuils EAR validés sur conducteurs asiatiques/occidentaux
+  - UTA-RLDD  : conditions réelles (éclairage variable, lunettes, barbe)
+  → Voir dataset_info.py pour les détails.
+
+Auteur  : Vanelle Stéphanie MANGOUA
+Dépend. : pip install opencv-python mediapipe numpy scipy
+"""
+
+import cv2
+import mediapipe as mp
+import numpy as np
+from scipy.spatial import distance
+import time
+import math
+import logging
+
+logger = logging.getLogger(__name__)
+
+# ── Landmarks MediaPipe Face Mesh (sur 468 points) ───────────────────────────
+# Source : https://github.com/google/mediapipe/blob/master/mediapipe/modules/face_geometry/data/canonical_face_model_uv_visualization.png
+
+# Œil gauche — 6 points pour EAR (P1=coin gauche, P4=coin droit, P2/P3/P5/P6=paupières)
+IDX_OEIL_G = [362, 385, 387, 263, 373, 380]
+# Œil droit
+IDX_OEIL_D = [33,  160, 158, 133, 153, 144]
+
+# Bouche — 8 points pour MAR
+IDX_BOUCHE = [61, 39, 0, 269, 291, 405, 17, 181]
+
+# Head pose — 6 points clés utilisés avec solvePnP
+IDX_POSE = {
+    "nez":          1,
+    "menton":       152,
+    "oeil_g":       226,
+    "oeil_d":       446,
+    "bouche_g":     57,
+    "bouche_d":     287,
+}
+
+# Modèle 3D de référence (coordonnées en mm, visage générique)
+MODEL_3D = np.array([
+    (0.0,     0.0,    0.0),      # Nez
+    (0.0,  -330.0,  -65.0),      # Menton
+    (-225.0,  170.0, -135.0),    # Coin œil gauche
+    (225.0,   170.0, -135.0),    # Coin œil droit
+    (-150.0, -150.0, -125.0),    # Coin bouche gauche
+    (150.0,  -150.0, -125.0),    # Coin bouche droit
+], dtype=np.float64)
+
+# ── Paramètres (calibrés sur NTHU-DDD + UTA-RLDD) ───────────────────────────
+EAR_DEFAUT        = 0.25    # Seuil par défaut (remplacé après calibration)
+EAR_FRAMES_SEUIL  = 20      # Frames consécutives avant niveau 1
+MAR_SEUIL         = 0.65    # Bâillement (validé UTA-RLDD)
+PERCLOS_SEUIL     = 0.35    # >35% frames yeux fermés → somnolence (NTHU-DDD)
+PERCLOS_FENETRE   = 60      # Fenêtre d'analyse PERCLOS (nb de frames)
+ANGLE_ROULIS_MAX  = 20      # Degrés d'inclinaison latérale max
+ANGLE_TANGAGE_MAX = 15      # Degrés d'inclinaison avant/arrière max
+
+DELAI_NV2 = 5.0             # Secondes niveau 1 → niveau 2
+DELAI_NV3 = 5.0             # Secondes niveau 2 → niveau 3
+
+
+def ear(points: np.ndarray) -> float:
+    """
+    Eye Aspect Ratio — Soukupová & Čech (2016).
+    EAR = (||p2-p6|| + ||p3-p5||) / (2 * ||p1-p4||)
+    """
+    A = distance.euclidean(points[1], points[5])
+    B = distance.euclidean(points[2], points[4])
+    C = distance.euclidean(points[0], points[3])
+    return (A + B) / (2.0 * C) if C > 0 else 0.0
+
+
+def mar(points: np.ndarray) -> float:
+    """
+    Mouth Aspect Ratio — mesure l'ouverture de la bouche.
+    Adapté de Abtahi et al. (2014).
+    """
+    A = distance.euclidean(points[1], points[7])
+    B = distance.euclidean(points[2], points[6])
+    C = distance.euclidean(points[3], points[5])
+    D = distance.euclidean(points[0], points[4])
+    return (A + B + C) / (3.0 * D) if D > 0 else 0.0
+
+
+def extraire_points(landmarks, indices, w, h):
+    """Extrait les coordonnées pixel à partir des landmarks MediaPipe."""
+    return np.array(
+        [(landmarks[i].x * w, landmarks[i].y * h) for i in indices],
+        dtype=np.float64
+    )
+
+
+def estimer_head_pose(landmarks, w, h):
+    """
+    Estime l'orientation de la tête (roulis, tangage, lacet) via solvePnP.
+    Retourne (roulis_deg, tangage_deg, lacet_deg).
+    """
+    image_points = np.array([
+        (landmarks[IDX_POSE["nez"]].x      * w, landmarks[IDX_POSE["nez"]].y      * h),
+        (landmarks[IDX_POSE["menton"]].x   * w, landmarks[IDX_POSE["menton"]].y   * h),
+        (landmarks[IDX_POSE["oeil_g"]].x   * w, landmarks[IDX_POSE["oeil_g"]].y   * h),
+        (landmarks[IDX_POSE["oeil_d"]].x   * w, landmarks[IDX_POSE["oeil_d"]].y   * h),
+        (landmarks[IDX_POSE["bouche_g"]].x * w, landmarks[IDX_POSE["bouche_g"]].y * h),
+        (landmarks[IDX_POSE["bouche_d"]].x * w, landmarks[IDX_POSE["bouche_d"]].y * h),
+    ], dtype=np.float64)
+
+    # Matrice intrinsèque approximée (caméra non calibrée)
+    focal   = w
+    centre  = (w / 2, h / 2)
+    K = np.array([
+        [focal, 0,     centre[0]],
+        [0,     focal, centre[1]],
+        [0,     0,     1        ],
+    ], dtype=np.float64)
+    dist_coeffs = np.zeros((4, 1))
+
+    ok, rvec, tvec = cv2.solvePnP(
+        MODEL_3D, image_points, K, dist_coeffs,
+        flags=cv2.SOLVEPNP_ITERATIVE
+    )
+    if not ok:
+        return 0.0, 0.0, 0.0
+
+    rmat, _ = cv2.Rodrigues(rvec)
+    # Angles d'Euler à partir de la matrice de rotation
+    sy    = math.sqrt(rmat[0,0]**2 + rmat[1,0]**2)
+    lacet   = math.degrees(math.atan2( rmat[1,0], rmat[0,0]))
+    tangage = math.degrees(math.atan2(-rmat[2,0], sy))
+    roulis  = math.degrees(math.atan2( rmat[2,1], rmat[2,2]))
+
+    return abs(roulis), abs(tangage), abs(lacet)
+
+
+class DetecteurSomnolence:
+    """
+    Détecteur de somnolence basé sur MediaPipe Face Mesh.
+    Utilise EAR, MAR, PERCLOS et head pose pour 3 niveaux de somnolence.
+    Supporte une calibration personnalisée par conducteur.
+    """
+
+    def __init__(self, camera_id: int = 0):
+        self.camera_id = camera_id
+
+        # Seuil EAR (remplacé après calibration)
+        self.ear_seuil     = EAR_DEFAUT
+        self.calibre       = False
+
+        # Compteurs
+        self.compteur_ear  = 0
+        self.compteur_mar  = 0
+        self.fenetre_perclos = []   # Historique frames (bool yeux fermés)
+
+        # Horodatages niveaux
+        self.ts_nv1        = None
+        self.ts_nv2        = None
+        self.niveau        = 0
+
+        # Métriques courantes
+        self.ear_val       = 1.0
+        self.mar_val       = 0.0
+        self.perclos       = 0.0
+        self.roulis        = 0.0
+        self.tangage       = 0.0
+        self.baillement    = False
+        self.tete_inclinee = False
+
+        # MediaPipe
+        self._mp_mesh  = mp.solutions.face_mesh
+        self._mesh     = None
+        self._cap      = None
+
+    # ── Init / libération ─────────────────────────────────────────────────────
+
+    def initialiser(self) -> bool:
+        """Lance MediaPipe et ouvre la caméra."""
+        self._mesh = self._mp_mesh.FaceMesh(
+            max_num_faces        = 1,
+            refine_landmarks     = True,    # 478 points (iris inclus)
+            min_detection_confidence = 0.6,
+            min_tracking_confidence  = 0.6,
+        )
+        self._cap = cv2.VideoCapture(self.camera_id)
+        if not self._cap.isOpened():
+            logger.error(f"Caméra {self.camera_id} inaccessible")
+            return False
+        self._cap.set(cv2.CAP_PROP_FRAME_WIDTH,  640)
+        self._cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        self._cap.set(cv2.CAP_PROP_FPS, 30)
+        logger.info("MediaPipe Face Mesh initialisé")
+        return True
+
+    def liberer(self):
+        if self._cap:
+            self._cap.release()
+        if self._mesh:
+            self._mesh.close()
+        cv2.destroyAllWindows()
+
+    # ── Calibration ───────────────────────────────────────────────────────────
+
+    def calibrer(self, duree: float = 3.0, afficher: bool = True) -> float:
+        """
+        Phase de calibration : mesure l'EAR du conducteur yeux grand ouverts.
+        Seuil personnalisé = mean_EAR * 0.75 (marge 25 %).
+        Inspiré de la méthode de Reddy et al. (2017).
+
+        Returns : seuil EAR calibré
+        """
+        logger.info(f"Calibration démarrée ({duree}s) — regardez la caméra yeux ouverts")
+        valeurs_ear = []
+        debut = time.time()
+
+        while time.time() - debut < duree:
+            ret, frame = self._cap.read()
+            if not ret:
+                continue
+
+            h, w = frame.shape[:2]
+            rgb   = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            res   = self._mesh.process(rgb)
+
+            if res.multi_face_landmarks:
+                lm = res.multi_face_landmarks[0].landmark
+                og = extraire_points(lm, IDX_OEIL_G, w, h)
+                od = extraire_points(lm, IDX_OEIL_D, w, h)
+                e  = (ear(og) + ear(od)) / 2.0
+                valeurs_ear.append(e)
+
+            if afficher:
+                restant = duree - (time.time() - debut)
+                cv2.putText(frame, f"CALIBRATION — yeux ouverts", (10, 30),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                cv2.putText(frame, f"{restant:.1f}s", (10, 65),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 255, 255), 3)
+                cv2.imshow("Calibration", frame)
+                cv2.waitKey(1)
+
+        cv2.destroyWindow("Calibration")
+
+        if len(valeurs_ear) < 10:
+            logger.warning("Pas assez de mesures — seuil par défaut utilisé")
+            self.ear_seuil = EAR_DEFAUT
+        else:
+            mean_ear       = np.mean(valeurs_ear)
+            std_ear        = np.std(valeurs_ear)
+            self.ear_seuil = max(mean_ear * 0.75, mean_ear - 2 * std_ear)
+            self.ear_seuil = round(self.ear_seuil, 3)
+            logger.info(
+                f"Calibration OK — EAR moyen={mean_ear:.3f}, "
+                f"std={std_ear:.3f}, seuil={self.ear_seuil}"
+            )
+
+        self.calibre = True
+        return self.ear_seuil
+
+    # ── Machine à états somnolence ────────────────────────────────────────────
+
+    def _maj_niveau(self, yeux_fermes: bool):
+        now = time.time()
+
+        # PERCLOS — proportion de frames yeux fermés sur fenêtre glissante
+        self.fenetre_perclos.append(yeux_fermes)
+        if len(self.fenetre_perclos) > PERCLOS_FENETRE:
+            self.fenetre_perclos.pop(0)
+        self.perclos = sum(self.fenetre_perclos) / len(self.fenetre_perclos)
+
+        # Signal combiné : EAR OU PERCLOS OU (bâillement + tête inclinée)
+        signal = (
+            yeux_fermes
+            or self.perclos >= PERCLOS_SEUIL
+            or (self.baillement and self.tete_inclinee)
+        )
+
+        if not signal:
+            self.compteur_ear = 0
+            self.ts_nv1       = None
+            self.ts_nv2       = None
+            self.niveau       = 0
+            return
+
+        self.compteur_ear += 1
+
+        if self.compteur_ear >= EAR_FRAMES_SEUIL:
+            if self.ts_nv1 is None:
+                self.ts_nv1 = now
+                self.niveau = 1
+
+            if self.niveau == 1 and (now - self.ts_nv1) >= DELAI_NV2:
+                if self.ts_nv2 is None:
+                    self.ts_nv2 = now
+                    self.niveau = 2
+
+            if self.niveau == 2 and (now - self.ts_nv2) >= DELAI_NV3:
+                self.niveau = 3
+
+    # ── Update principal ──────────────────────────────────────────────────────
+
+    def update(self) -> dict:
+        """
+        Lit une frame, calcule EAR/MAR/PERCLOS/head pose, met à jour le niveau.
+        Returns : dict métriques + niveau + frame annotée
+        """
+        if not self._cap:
+            return {"erreur": "Non initialisé", "niveau": -1}
+
+        ret, frame = self._cap.read()
+        if not ret:
+            return {"erreur": "Lecture caméra échouée", "niveau": -1}
+
+        h, w = frame.shape[:2]
+        rgb   = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        rgb.flags.writeable = False
+        res = self._mesh.process(rgb)
+        rgb.flags.writeable = True
+
+        if not res.multi_face_landmarks:
+            # Tolérance SR6 : pas de visage → maintenir dernier niveau
+            return {
+                "niveau": self.niveau, "ear": None, "mar": None,
+                "perclos": round(self.perclos, 2),
+                "roulis": None, "tangage": None,
+                "baillement": False, "tete_inclinee": False,
+                "visage_detecte": False, "frame": frame,
+            }
+
+        lm = res.multi_face_landmarks[0].landmark
+
+        # ── EAR ──────────────────────────────────────────────────────────────
+        og = extraire_points(lm, IDX_OEIL_G, w, h)
+        od = extraire_points(lm, IDX_OEIL_D, w, h)
+        self.ear_val  = (ear(og) + ear(od)) / 2.0
+        yeux_fermes   = self.ear_val < self.ear_seuil
+
+        # ── MAR (bâillement) ──────────────────────────────────────────────────
+        bm = extraire_points(lm, IDX_BOUCHE, w, h)
+        self.mar_val  = mar(bm)
+        if self.mar_val > MAR_SEUIL:
+            self.compteur_mar += 1
+            self.baillement = self.compteur_mar >= 3
+        else:
+            self.compteur_mar = max(0, self.compteur_mar - 1)
+            if self.compteur_mar == 0:
+                self.baillement = False
+
+        # ── Head pose (solvePnP) ──────────────────────────────────────────────
+        self.roulis, self.tangage, _ = estimer_head_pose(lm, w, h)
+        self.tete_inclinee = (
+            self.roulis  > ANGLE_ROULIS_MAX or
+            self.tangage > ANGLE_TANGAGE_MAX
+        )
+
+        # ── Mise à jour niveau ────────────────────────────────────────────────
+        self._maj_niveau(yeux_fermes)
+
+        # ── Annotations frame ─────────────────────────────────────────────────
+        self._annoter(frame, og, od, bm)
+
+        return {
+            "niveau":         self.niveau,
+            "ear":            round(self.ear_val, 3),
+            "mar":            round(self.mar_val, 3),
+            "perclos":        round(self.perclos, 2),
+            "roulis":         round(self.roulis, 1),
+            "tangage":        round(self.tangage, 1),
+            "baillement":     self.baillement,
+            "tete_inclinee":  self.tete_inclinee,
+            "visage_detecte": True,
+            "frame":          frame,
+            "ear_seuil":      self.ear_seuil,
+            "calibre":        self.calibre,
+        }
+
+    # ── Annotations visuelles ─────────────────────────────────────────────────
+
+    def _annoter(self, frame, og, od, bm):
+        COULEURS = {0:(0,220,0), 1:(0,165,255), 2:(0,80,255), 3:(0,0,255)}
+        c = COULEURS.get(self.niveau, (255,255,255))
+
+        for pt in np.vstack([og, od, bm]):
+            cv2.circle(frame, (int(pt[0]), int(pt[1])), 2, c, -1)
+
+        MSGS = {1:"SOMNOLENCE", 2:"VOUS DORMEZ ?", 3:"URGENCE — PARKING AUTO"}
+        lignes = [
+            f"EAR {self.ear_val:.3f} / seuil {self.ear_seuil:.3f}",
+            f"MAR {self.mar_val:.2f}   PERCLOS {self.perclos*100:.0f}%",
+            f"Roulis {self.roulis:.1f}°  Tangage {self.tangage:.1f}°",
+            f"Niveau : {self.niveau}" + (f" — {MSGS[self.niveau]}" if self.niveau else ""),
+        ]
+        for i, txt in enumerate(lignes):
+            cv2.putText(frame, txt, (8, 28 + i*24),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.58, c, 2)

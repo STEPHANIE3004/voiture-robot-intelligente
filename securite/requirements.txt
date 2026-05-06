@@ -1,0 +1,7 @@
+opencv-python>=4.5.0
+dlib>=19.22.0
+imutils>=0.5.4
+scipy>=1.7.0
+numpy>=1.21.0
+spidev>=3.5
+RPi.GPIO>=0.7.0

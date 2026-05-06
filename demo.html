@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>🤖 Voiture Robot Intelligente — Tableau de Bord</title>
+<style>
+  :root { --bg:#0a0e1a; --bg2:#0f1626; --bg3:#141d2e; --border:#1e2d47; --text:#e0e8ff; --muted:#6b7fa3; --blue:#4fc3f7; --green:#69f0ae; --red:#ff5252; --yellow:#ffd740; --orange:#ff9800; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+  header{background:var(--bg2);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:16px}
+  header h1{font-size:18px;font-weight:700;color:var(--blue)}
+  .sub{font-size:12px;color:var(--muted)}
+  .live{display:flex;align-items:center;gap:6px;margin-left:auto;font-size:12px;color:var(--green)}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:blink 1s infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr 320px;gap:14px;padding:18px;max-width:1300px;margin:0 auto}
+  .panel{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px}
+  .ptitle{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px}
+
+  /* Robot top-view */
+  #robot-canvas{display:block;margin:0 auto;border-radius:8px}
+
+  /* Sensors */
+  .sensor-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .sensor{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center}
+  .sensor-val{font-size:26px;font-weight:700;line-height:1}
+  .sensor-name{font-size:10px;color:var(--muted);margin-top:4px}
+  .sensor-bar{height:5px;border-radius:3px;background:var(--border);margin-top:6px;overflow:hidden}
+  .sensor-fill{height:100%;border-radius:3px;transition:width .4s,background .4s}
+
+  /* State */
+  .state-card{background:var(--bg3);border-radius:8px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px}
+  .state-icon{font-size:28px}
+  .state-label{font-size:13px;font-weight:600}
+  .state-sub{font-size:11px;color:var(--muted)}
+
+  /* Motors */
+  .motor-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+  .motor{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px;text-align:center}
+  .motor-name{font-size:10px;color:var(--muted);margin-bottom:4px}
+  .motor-val{font-size:20px;font-weight:700}
+
+  /* Serial log */
+  .serial{background:#000;border:1px solid #1a2a1a;border-radius:6px;padding:10px;height:200px;overflow-y:auto;font-family:'Courier New',monospace;font-size:11px}
+  .serial::-webkit-scrollbar{width:3px}
+  .serial::-webkit-scrollbar-thumb{background:#333}
+  .sl{padding:1px 0}
+  .sl.ok{color:var(--green)}
+  .sl.warn{color:var(--yellow)}
+  .sl.err{color:var(--red)}
+  .sl.info{color:var(--blue)}
+
+  /* Servo gauge */
+  #servo-canvas{display:block;margin:0 auto}
+
+  /* Speed slider */
+  .slider-row{display:flex;align-items:center;gap:10px;margin-top:8px}
+  .slider-row input{flex:1;accent-color:var(--blue)}
+  .slider-val{font-size:13px;font-weight:600;color:var(--blue);min-width:40px}
+
+  .btn{padding:8px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;margin:4px 2px;transition:all .2s}
+  .btn-blue{background:#0d2a3d;color:var(--blue);border:1px solid var(--blue)}
+  .btn-blue:hover{background:#1a4a6e}
+  .btn-red{background:#2d0f0f;color:var(--red);border:1px solid var(--red)}
+  .btn-red:hover{background:#5a1a1a}
+  .btn-green{background:#0a2016;color:var(--green);border:1px solid var(--green)}
+  .btn-green:hover{background:#1a5c28}
+</style>
+</head>
+<body>
+<header>
+  <span style="font-size:26px">🤖</span>
+  <div><h1>Voiture Robot Intelligente</h1><div class="sub">Arduino Uno · HC-SR04 + Servo SG90 + L298N + TCRT5000</div></div>
+  <div class="live"><div class="dot"></div>Simulation active</div>
+</header>
+
+<div class="grid">
+  <!-- Robot view -->
+  <div class="panel">
+    <div class="ptitle">📡 Vue du robot — Détection obstacles</div>
+    <canvas id="robot-canvas" width="320" height="300"></canvas>
+    <div style="margin-top:12px">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Vitesse moteurs</div>
+      <div class="slider-row">
+        <span style="font-size:11px;color:var(--muted)">0%</span>
+        <input type="range" id="speed-slider" min="0" max="100" value="75">
+        <span style="font-size:11px;color:var(--muted)">100%</span>
+        <span class="slider-val" id="speed-val">75%</span>
+      </div>
+    </div>
+    <div style="margin-top:10px;text-align:center">
+      <button class="btn btn-green" onclick="setState('forward')">▲ AVANT</button>
+      <button class="btn btn-blue" onclick="setState('left')">◄ GAUCHE</button>
+      <button class="btn btn-red" onclick="setState('stop')">■ STOP</button>
+      <button class="btn btn-blue" onclick="setState('right')">DROITE ►</button>
+    </div>
+  </div>
+
+  <!-- Servo + Sensors -->
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div class="panel">
+      <div class="ptitle">🔄 Servo SG90 — Balayage sonar</div>
+      <canvas id="servo-canvas" width="280" height="160"></canvas>
+    </div>
+    <div class="panel">
+      <div class="ptitle">📊 Capteurs</div>
+      <div class="sensor-grid">
+        <div class="sensor">
+          <div class="sensor-val" id="dist-val" style="color:var(--green)">—</div>
+          <div class="sensor-name">Distance HC-SR04 (cm)</div>
+          <div class="sensor-bar"><div class="sensor-fill" id="dist-bar" style="width:0%;background:var(--green)"></div></div>
+        </div>
+        <div class="sensor">
+          <div class="sensor-val" id="servo-val" style="color:var(--blue)">90°</div>
+          <div class="sensor-name">Angle servo</div>
+          <div class="sensor-bar"><div class="sensor-fill" id="servo-bar" style="width:50%;background:var(--blue)"></div></div>
+        </div>
+        <div class="sensor">
+          <div class="sensor-val" id="line-val" style="color:var(--yellow)">—</div>
+          <div class="sensor-name">Suivi ligne TCRT5000</div>
+          <div class="sensor-bar"><div class="sensor-fill" id="line-bar" style="width:0%;background:var(--yellow)"></div></div>
+        </div>
+        <div class="sensor">
+          <div class="sensor-val" id="speed-val2" style="color:var(--orange)">75%</div>
+          <div class="sensor-name">Vitesse PWM</div>
+          <div class="sensor-bar"><div class="sensor-fill" id="speed-bar" style="width:75%;background:var(--orange)"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right panel -->
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div class="panel">
+      <div class="ptitle">🚦 État du robot</div>
+      <div class="state-card" id="state-card">
+        <div class="state-icon" id="state-icon">⬆️</div>
+        <div><div class="state-label" id="state-label">AVANCE</div><div class="state-sub" id="state-sub">Voie libre — Distance > 25 cm</div></div>
+      </div>
+      <div class="motor-row">
+        <div class="motor"><div class="motor-name">Moteur Gauche</div><div class="motor-val" id="ml-val" style="color:var(--green)">FWD</div></div>
+        <div class="motor"><div class="motor-name">Moteur Droit</div><div class="motor-val" id="mr-val" style="color:var(--green)">FWD</div></div>
+      </div>
+    </div>
+
+    <div class="panel" style="flex:1">
+      <div class="ptitle">💻 Serial Monitor Arduino</div>
+      <div class="serial" id="serial-log"></div>
+      <div style="margin-top:8px;text-align:right">
+        <button class="btn btn-blue" onclick="clearSerial()">Effacer</button>
+        <button class="btn btn-green" onclick="toggleSim()">▶/⏸ Auto</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const robotCanvas = document.getElementById('robot-canvas');
+const rctx = robotCanvas.getContext('2d');
+const servoCanvas = document.getElementById('servo-canvas');
+const sctx = servoCanvas.getContext('2d');
+
+let distance = 80;
+let servoAngle = 90;
+let robotState = 'forward';
+let lineVal = 0;
+let simRunning = true;
+let simTimer = null;
+let obstacles = [];
+let scanDir = 1;
+
+// Generate random obstacle field
+function genObstacles() {
+  obstacles = [];
+  for (let i = 0; i < 3; i++) {
+    obstacles.push({ x: 80 + Math.random() * 160, y: 20 + Math.random() * 120, r: 15 + Math.random() * 20 });
+  }
+}
+genObstacles();
+
+function drawRobot() {
+  const W = robotCanvas.width, H = robotCanvas.height;
+  rctx.clearRect(0, 0, W, H);
+  rctx.fillStyle = '#050a14';
+  rctx.fillRect(0, 0, W, H);
+
+  // Grid
+  rctx.strokeStyle = '#0d1a2e'; rctx.lineWidth = 1;
+  for (let x = 0; x < W; x += 20) { rctx.beginPath(); rctx.moveTo(x,0); rctx.lineTo(x,H); rctx.stroke(); }
+  for (let y = 0; y < H; y += 20) { rctx.beginPath(); rctx.moveTo(0,y); rctx.lineTo(W,y); rctx.stroke(); }
+
+  // Obstacles
+  obstacles.forEach(o => {
+    rctx.beginPath(); rctx.arc(o.x, o.y, o.r, 0, Math.PI*2);
+    rctx.fillStyle = 'rgba(255,82,82,0.3)'; rctx.fill();
+    rctx.strokeStyle = '#ff5252'; rctx.lineWidth = 2; rctx.stroke();
+    rctx.fillStyle = '#ff5252'; rctx.font = '14px sans-serif'; rctx.textAlign='center';
+    rctx.fillText('🧱', o.x, o.y+5);
+  });
+
+  // Robot body (center-bottom)
+  const rx = W/2, ry = H - 70;
+
+  // Sonar beam
+  const angle = (servoAngle - 90) * Math.PI / 180;
+  const beamLen = Math.min(distance * 1.5, 180);
+  const bx = rx + Math.sin(angle) * beamLen;
+  const by = ry - Math.cos(angle) * beamLen;
+  const grad = rctx.createLinearGradient(rx, ry, bx, by);
+  const beamColor = distance < 25 ? '#ff5252' : distance < 50 ? '#ffd740' : '#69f0ae';
+  grad.addColorStop(0, beamColor); grad.addColorStop(1, 'transparent');
+  rctx.beginPath(); rctx.moveTo(rx, ry);
+  // Draw cone
+  const spread = 0.25;
+  rctx.arc(rx, ry, beamLen, angle - Math.PI/2 - spread, angle - Math.PI/2 + spread);
+  rctx.closePath(); rctx.fillStyle = beamColor+'22'; rctx.fill();
+  rctx.beginPath(); rctx.moveTo(rx, ry); rctx.lineTo(bx, by);
+  rctx.strokeStyle = beamColor; rctx.lineWidth = 2; rctx.stroke();
+
+  // Distance circles
+  [50, 100, 150].forEach((r, i) => {
+    rctx.beginPath(); rctx.arc(rx, ry, r, Math.PI, 2*Math.PI);
+    rctx.strokeStyle = ['#1a3a1a','#1a2a3a','#2a1a1a'][i]; rctx.lineWidth = 1; rctx.stroke();
+    rctx.fillStyle = '#6b7fa3'; rctx.font = '9px sans-serif'; rctx.textAlign='left';
+    rctx.fillText(`${Math.round(r/1.5)}cm`, rx+r+2, ry+3);
+  });
+
+  // Wheels
+  rctx.fillStyle = '#1a2a3a'; rctx.strokeStyle = '#4fc3f7'; rctx.lineWidth = 2;
+  [[-22,0],[22,0],[-22,30],[22,30]].forEach(([dx,dy]) => {
+    rctx.beginPath(); rctx.roundRect(rx+dx-6, ry+dy+10, 12, 20, 2); rctx.fill(); rctx.stroke();
+  });
+  // Body
+  rctx.fillStyle = '#0d2040'; rctx.strokeStyle = '#4fc3f7'; rctx.lineWidth = 2;
+  rctx.beginPath(); rctx.roundRect(rx-18, ry+10, 36, 38, 4); rctx.fill(); rctx.stroke();
+  // Arduino chip
+  rctx.fillStyle = '#1a3a1a'; rctx.strokeStyle = '#69f0ae'; rctx.lineWidth = 1;
+  rctx.beginPath(); rctx.roundRect(rx-8, ry+15, 16, 10, 2); rctx.fill(); rctx.stroke();
+  // Servo + sensor on top
+  rctx.fillStyle = '#ffd740'; rctx.beginPath(); rctx.arc(rx, ry+8, 6, 0, Math.PI*2); rctx.fill();
+  // Arrow direction
+  const arrowColor = robotState === 'stop' ? '#ff5252' : robotState === 'forward' ? '#69f0ae' : '#4fc3f7';
+  rctx.fillStyle = arrowColor; rctx.font = '18px sans-serif'; rctx.textAlign='center';
+  const arrows = {forward:'⬆',backward:'⬇',left:'⬅',right:'➡',stop:'■',scan:'🔄'};
+  rctx.fillText(arrows[robotState]||'⬆', rx, ry+52);
+}
+
+function drawServo() {
+  const W = servoCanvas.width, H = servoCanvas.height;
+  sctx.clearRect(0,0,W,H);
+  sctx.fillStyle = '#050a14'; sctx.fillRect(0,0,W,H);
+  const cx = W/2, cy = H - 20, r = H - 40;
+
+  // Arc background
+  sctx.beginPath(); sctx.arc(cx, cy, r, Math.PI, 2*Math.PI);
+  sctx.strokeStyle = '#1e2d47'; sctx.lineWidth = 30; sctx.stroke();
+
+  // Arc colored (0° = left = 180°servo, 180° = right = 0°servo)
+  const startA = Math.PI;
+  const progA = startA + (servoAngle / 180) * Math.PI;
+  sctx.beginPath(); sctx.arc(cx, cy, r, Math.PI, progA);
+  sctx.strokeStyle = '#4fc3f7'; sctx.lineWidth = 30; sctx.stroke();
+
+  // Needle
+  const needleA = Math.PI + (servoAngle/180)*Math.PI;
+  const nx = cx + (r) * Math.cos(needleA);
+  const ny = cy + (r) * Math.sin(needleA);
+  sctx.beginPath(); sctx.moveTo(cx,cy); sctx.lineTo(nx,ny);
+  sctx.strokeStyle = '#fff'; sctx.lineWidth = 3; sctx.stroke();
+  sctx.beginPath(); sctx.arc(cx,cy,8,0,Math.PI*2); sctx.fillStyle='#4fc3f7'; sctx.fill();
+
+  // Labels
+  sctx.fillStyle = '#6b7fa3'; sctx.font = '10px sans-serif'; sctx.textAlign='center';
+  sctx.fillText('0°', cx - r - 8, cy+4);
+  sctx.fillText('180°', cx + r + 10, cy+4);
+  sctx.fillText('90°', cx, cy - r - 8);
+  sctx.fillStyle = '#e0e8ff'; sctx.font = 'bold 18px sans-serif';
+  sctx.fillText(servoAngle + '°', cx, cy - 15);
+}
+
+function setState(s) {
+  robotState = s;
+  const stateMap = {
+    forward: {icon:'⬆️', label:'AVANCE', sub:'Voie libre — Distance > 25 cm', ml:'FWD', mr:'FWD', mlc:'var(--green)', mrc:'var(--green)'},
+    left: {icon:'⬅️', label:'TOURNE GAUCHE', sub:'Obstacle détecté — évitement', ml:'BCK', mr:'FWD', mlc:'var(--red)', mrc:'var(--green)'},
+    right: {icon:'➡️', label:'TOURNE DROITE', sub:'Obstacle détecté — évitement', ml:'FWD', mr:'BCK', mlc:'var(--green)', mrc:'var(--red)'},
+    stop: {icon:'🛑', label:'ARRÊT', sub:'Obstacle trop proche — scan en cours', ml:'STP', mr:'STP', mlc:'var(--muted)', mrc:'var(--muted)'},
+    scan: {icon:'🔄', label:'SCAN', sub:'Balayage servo 30°→150°', ml:'STP', mr:'STP', mlc:'var(--muted)', mrc:'var(--muted)'},
+    backward: {icon:'⬇️', label:'RECULE', sub:'Dégagement obstacle', ml:'BCK', mr:'BCK', mlc:'var(--yellow)', mrc:'var(--yellow)'},
+  };
+  const m = stateMap[s] || stateMap.forward;
+  document.getElementById('state-icon').textContent = m.icon;
+  document.getElementById('state-label').textContent = m.label;
+  document.getElementById('state-sub').textContent = m.sub;
+  document.getElementById('ml-val').textContent = m.ml;
+  document.getElementById('ml-val').style.color = m.mlc;
+  document.getElementById('mr-val').textContent = m.mr;
+  document.getElementById('mr-val').style.color = m.mrc;
+}
+
+function updateSensors() {
+  const dc = distance < 25 ? 'var(--red)' : distance < 50 ? 'var(--yellow)' : 'var(--green)';
+  document.getElementById('dist-val').textContent = distance + ' cm';
+  document.getElementById('dist-val').style.color = dc;
+  document.getElementById('dist-bar').style.width = Math.min(100, distance/2)+'%';
+  document.getElementById('dist-bar').style.background = dc;
+  document.getElementById('servo-val').textContent = servoAngle + '°';
+  document.getElementById('servo-bar').style.width = (servoAngle/180*100)+'%';
+  lineVal = Math.random() > 0.8 ? Math.round(Math.random()*800+200) : Math.round(Math.random()*100);
+  document.getElementById('line-val').textContent = lineVal;
+  document.getElementById('line-bar').style.width = Math.min(100,lineVal/10)+'%';
+  const spd = document.getElementById('speed-slider').value;
+  document.getElementById('speed-val2').textContent = spd + '%';
+  document.getElementById('speed-bar').style.width = spd + '%';
+}
+
+function serialLog(msg, type='ok') {
+  const log = document.getElementById('serial-log');
+  const now = new Date().toLocaleTimeString('fr-FR',{hour12:false});
+  const div = document.createElement('div');
+  div.className = 'sl ' + type;
+  div.textContent = `[${now}] ${msg}`;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+  if (log.children.length > 100) log.removeChild(log.firstChild);
+}
+
+function clearSerial() { document.getElementById('serial-log').innerHTML = ''; }
+
+let tick = 0;
+let scanning = false;
+function simStep() {
+  tick++;
+  // Randomly vary distance
+  distance = Math.max(5, Math.min(200, distance + (Math.random()-0.45)*15));
+  distance = Math.round(distance);
+
+  if (scanning) {
+    servoAngle += scanDir * 8;
+    if (servoAngle >= 150) { scanDir = -1; }
+    if (servoAngle <= 30) { scanDir = 1; scanning = false; setState('forward'); }
+    setState('scan');
+    serialLog(`[SERVO] Angle=${servoAngle}° Dist=${distance}cm`, 'info');
+  } else if (distance < 15) {
+    setState('stop');
+    scanning = true;
+    serialLog(`[STOP] Obstacle proche=${distance}cm — scan`, 'warn');
+  } else if (distance < 25) {
+    const dir = Math.random() > 0.5 ? 'left' : 'right';
+    setState(dir);
+    serialLog(`[EVITE] Distance=${distance}cm → ${dir.toUpperCase()}`, 'warn');
+    genObstacles();
+  } else {
+    if (robotState !== 'forward') {
+      serialLog(`[OK] Voie libre (${distance}cm) → AVANCE`, 'ok');
+    }
+    setState('forward');
+    if (tick % 5 === 0) serialLog(`[LOOP] Dist=${distance}cm Servo=${servoAngle}° PWM=${document.getElementById('speed-slider').value}`, 'ok');
+  }
+
+  drawRobot(); drawServo(); updateSensors();
+}
+
+function toggleSim() { simRunning = !simRunning; if (simRunning) startSim(); else { clearInterval(simTimer); serialLog('[SIM] Pause','info'); } }
+function startSim() { simTimer = setInterval(simStep, 600); }
+
+document.getElementById('speed-slider').oninput = function() {
+  document.getElementById('speed-val').textContent = this.value+'%';
+};
+
+// Init
+serialLog('[INIT] Arduino Uno démarré','info');
+serialLog('[INIT] HC-SR04 OK | Servo OK | L298N OK | TCRT5000 OK','ok');
+serialLog('[LOOP] Démarrage simulation...','info');
+drawRobot(); drawServo(); updateSensors();
+startSim();
+</script>
+</body>
+</html>
