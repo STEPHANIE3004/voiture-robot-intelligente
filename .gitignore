@@ -3,3 +3,21 @@ robot_sim
 *.hex
 *.o
 *.out
+
+# Backups auto-generés par maj_seuils.py
+*.bak_*
+
+# Modele MediaPipe (lourd, se re-télécharge auto)
+raspberry/face_landmarker.task
+
+# Cache Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Fichier temporaire pipeline
+_dataset_path.txt
+
+# Dataset NTHU-DDD (trop lourd pour git — géré via kagglehub)
+# Le dossier resultats_nthu/ est commité (contient ROC, rapport, JSON seuils)
+

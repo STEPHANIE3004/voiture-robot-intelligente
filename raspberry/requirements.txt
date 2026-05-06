@@ -1,9 +1,12 @@
 # Raspberry Pi — Voiture Robot Sécurisée
+# Auteur : Vanelle Stéphanie MANGOUA — ESIEA
 # Installer avec : pip install -r requirements.txt
 
 # Vision par ordinateur
 opencv-python>=4.5.0
-mediapipe>=0.9.0        # Remplace dlib — plus rapide sur RPi, no model file
+mediapipe>=0.10.0       # Tasks API + XNNPACK NEON (optimisé ARM/RPi)
+                        # Remplace dlib — aucun fichier .dat externe requis
+                        # Modèle face_landmarker.task téléchargé auto au 1er lancement
 
 # Calcul numérique
 numpy>=1.21.0
@@ -12,5 +15,7 @@ scipy>=1.7.0
 # Communication série
 pyserial>=3.5
 
-# Optionnel — visualisation debug
-# matplotlib>=3.4.0
+# Pipeline de validation seuils (optionnel — ordinateur uniquement)
+scikit-learn>=1.0.0     # ROC curve + métriques
+matplotlib>=3.4.0       # Graphiques ROC et distributions
+kagglehub>=0.1.0        # Téléchargement NTHU-DDD via API Kaggle

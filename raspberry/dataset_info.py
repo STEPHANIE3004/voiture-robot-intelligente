@@ -152,15 +152,34 @@ if __name__ == "__main__":
     afficher_references()
 
 # ════════════════════════════════════════════════════════════════════════════
-#  Seuils validés par analyse réelle du dataset NTHU-DDD
-#  Généré le 2026-05-06 16:13 par analyse_nthu.py
+#  Seuils validés par analyse réelle du dataset NTHU-DDD Multi-Class
+#  Pipeline : analyse_nthu.py  |  Date : 2026-05-06
+#  Méthode  : ROC + indice de Youden (max TPR-FPR) — recommandé sécurité
 # ════════════════════════════════════════════════════════════════════════════
 SEUILS_VALIDES_NTHU = {
-    "EAR":         0.715,   # seuil F1-optimal (AUC=nan)
-    "MAR":         0.151,
-    "PERCLOS":     0.350,
-    "n_frames":    7898,
-    "n_videos":    7898,
-    "dataset":     "samymesbah/nthu-dataset-ddd-multi-class",
-    "methode":     "ROC + indice de Youden + F1-optimal",
+    # ── Seuils retenus ──────────────────────────────────────────────────────
+    "EAR":         0.261,   # Youden index (AUC=0.678, F1-opt=0.384 ignoré car trop permissif)
+    "MAR":         0.650,   # Valeur défaut conservée : AUC MAR=0.454 < 0.5 sur NTHU-DDD
+    "PERCLOS":     0.350,   # Standard NHTSA, non recalibré (dataset sans séquences temporelles)
+
+    # ── Informations sur la validation ──────────────────────────────────────
+    "n_images":    133042,  # Total images dans le dataset
+    "n_frames":    7902,    # Images traitées par MediaPipe (échantillon équilibré)
+    "n_eveille":   3580,    # Frames éveillé (label=0) dans l'échantillon
+    "n_somnolent": 4322,    # Frames somnolent (label=1) dans l'échantillon
+    "n_no_face":   98,      # Frames sans visage détecté (~1.2%)
+
+    # ── Métriques ROC ───────────────────────────────────────────────────────
+    "auc_ear":     0.678,   # AUC EAR — discriminant (> 0.5)
+    "auc_mar":     0.454,   # AUC MAR — non discriminant sur ce dataset (< 0.5)
+    "ear_youden":  0.261,   # Seuil EAR retenu (indice de Youden)
+    "ear_f1_opt":  0.384,   # Seuil EAR F1-optimal (non retenu — trop permissif)
+    "mar_youden":  0.655,   # Seuil MAR Youden (non retenu — AUC < 0.5)
+
+    # ── Métadonnées ─────────────────────────────────────────────────────────
+    "dataset":     "samymesbah/nthu-dataset-ddd-multi-class (Kaggle)",
+    "dataset_url": "https://www.kaggle.com/datasets/samymesbah/nthu-dataset-ddd-multi-class",
+    "methode":     "ROC + indice de Youden (recommandé sécurité) + vérification AUC",
+    "note_ear":    "EAR Youden=0.261 cohérent avec littérature (Soukupová & Čech 2016: 0.25-0.28)",
+    "note_mar":    "NTHU-DDD centré sur yeux/PERCLOS, pas bâillements → MAR défaut UTA-RLDD conservé",
 }
