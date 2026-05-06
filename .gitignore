@@ -1,0 +1,5 @@
+robot_sim
+*.elf
+*.hex
+*.o
+*.out
