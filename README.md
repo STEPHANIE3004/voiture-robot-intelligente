@@ -226,7 +226,7 @@ voiture-robot-intelligente/
 │   ├── maj_seuils.py                 ← Patch automatique des seuils
 │   ├── benchmark_rpi.py              ← Benchmark latence MediaPipe
 │   ├── telecharger_et_analyser.ps1   ← Automation complète Windows (Kaggle → seuils)
-│   ├── face_landmarker.task          ← Modèle MediaPipe Tasks (~5 Mo)
+│   ├── face_landmarker.task          ← Modèle Tasks API pour demo.html (JS) — le code Python utilise mp.solutions.face_mesh
 │   ├── resultats_nthu/               ← ROC curves · distribution EAR · rapport
 │   └── requirements.txt
 │
@@ -252,6 +252,11 @@ voiture-robot-intelligente/
 pip install -r raspberry/requirements.txt
 # opencv-python · mediapipe · numpy · scipy
 ```
+
+> **Raspberry Pi — installation MediaPipe sur ARM**  
+> Sur RPi 4 : `pip install mediapipe` fonctionne directement.  
+> Sur RPi 3 (ARM v7) : utiliser la wheel précompilée si l'installation échoue —  
+> `pip install https://github.com/niconielsen32/mediapipe-raspberrypi/releases/download/v0.10.3/mediapipe-0.10.3-cp39-cp39-linux_armv7l.whl`
 
 ### Arduino
 
