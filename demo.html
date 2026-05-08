@@ -3,485 +3,1036 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🚗 Voiture Robot Intelligente — Sécurité Active Conducteur</title>
+<title>Voiture Robot Intelligente — Sécurité Active</title>
 <style>
-  :root {
-    --bg:#0a0f0a; --panel:#0f1a0f; --border:#1a2e1a; --green:#2dc653;
-    --green2:#1a7a30; --yellow:#f5a623; --red:#e53e3e; --blue:#4299e1;
-    --purple:#9f7aea; --muted:#4a6a4a; --text:#d4ecd4; --white:#e8f5e8;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;font-size:12px;min-height:100vh}
-  .topbar{background:var(--panel);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-  .topbar h1{font-size:14px;color:var(--white);font-weight:700}
-  .sub{font-size:10px;color:var(--muted)}
-  .live{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--green);margin-left:auto}
-  .dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 1.2s infinite}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-  .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:8px}
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 8px 8px}
-  .grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;padding:0 8px 8px}
-  .panel{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:10px}
-  .ptitle{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:4px}
-  .state-display{text-align:center;padding:10px}
-  .state-icon{font-size:36px;margin-bottom:4px}
-  .state-name{font-size:18px;font-weight:800;color:var(--green);letter-spacing:.05em}
-  .state-desc{font-size:10px;color:var(--muted);margin-top:3px}
-  .state-flow{display:flex;align-items:center;justify-content:center;gap:4px;flex-wrap:wrap;margin-top:8px}
-  .sf-node{font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--border);color:var(--muted)}
-  .sf-node.active{border-color:var(--green);color:var(--green);background:#0f2a14}
-  .sf-node.done{border-color:var(--green2);color:var(--green2)}
-  .sf-arr{color:var(--muted);font-size:9px}
-  .metric-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
-  .metric-label{font-size:10px;color:var(--muted)}
-  .metric-val{font-size:13px;font-weight:700;font-family:'Courier New',monospace}
-  .metric-bar{height:4px;background:#0a1a0a;border-radius:2px;margin-top:2px;overflow:hidden;margin-bottom:2px}
-  .metric-fill{height:100%;border-radius:2px;transition:width .3s}
-  .threshold-line{font-size:9px;color:var(--muted);text-align:right;margin-bottom:6px}
-  .alert-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
-  .alert-box{text-align:center;padding:6px 4px;border-radius:4px;border:1px solid var(--border)}
-  .alert-box .al-icon{font-size:16px}
-  .alert-box .al-label{font-size:9px;color:var(--muted);margin-top:2px}
-  .alert-box.active-0{border-color:#2dc653;background:#0f2a14}
-  .alert-box.active-1{border-color:#f5a623;background:#1a1400}
-  .alert-box.active-2{border-color:#ed8936;background:#1a0f00}
-  .alert-box.active-3{border-color:#e53e3e;background:#1a0000;animation:alertpulse .6s infinite}
-  @keyframes alertpulse{0%,100%{opacity:1}50%{opacity:.6}}
-  .hw-item{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #0f1a0f;font-size:10px}
-  .hw-item:last-child{border:none}
-  .hw-tag{background:#0f1a0f;border:1px solid var(--border);border-radius:3px;padding:1px 5px;font-size:9px;color:var(--green)}
-  .serial{background:#000;border:1px solid #0a1a0a;border-radius:4px;height:130px;overflow-y:auto;padding:6px;font-size:10px}
-  .serial::-webkit-scrollbar{width:3px}
-  .serial::-webkit-scrollbar-thumb{background:#1a3a1a}
-  .sl-ok{color:var(--green)} .sl-warn{color:var(--yellow)} .sl-err{color:var(--red)} .sl-info{color:#4a7a6a} .sl-cmd{color:var(--blue)}
-  canvas{border-radius:4px;background:#000;width:100%;display:block}
-  .ds-metric{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #0f1a0f;font-size:10px}
-  .ds-val{font-weight:700;color:var(--green)}
-  .ds-warn{color:var(--yellow)}
-  .btn{border:none;border-radius:4px;padding:5px 10px;font-size:10px;cursor:pointer;font-family:'Courier New',monospace;font-weight:700}
-  .btn-green{background:var(--green2);color:var(--white)}
-  .btn-red{background:#7a1a1a;color:#ffaaaa}
-  .btn-blue{background:#1a3a5a;color:#aaddff}
-  .btn-yellow{background:#3a2a00;color:var(--yellow)}
-  .btn-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
-  .btn-row button{flex:1}
-  .bench-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #0f1a0f;font-size:10px}
-  .bench-ok{color:var(--green)} .bench-warn{color:var(--yellow)}
-  #faceCanvas{height:140px}
-  .roc-bar{height:6px;background:#0a1a0a;border-radius:3px;margin:4px 0;overflow:hidden}
-  .roc-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--red),var(--yellow),var(--green))}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
+
+:root{
+  --bg:#04070f;
+  --surface:#090e1c;
+  --surface2:#0e1528;
+  --border:#1a2540;
+  --border2:#0f1a30;
+  --cyan:#00d4ff;
+  --cyan-dim:#0ea5e960;
+  --green:#00c896;
+  --green-dim:#00c89630;
+  --yellow:#f59e0b;
+  --orange:#f97316;
+  --red:#ef4444;
+  --red-dim:#ef444430;
+  --purple:#8b5cf6;
+  --text:#e2e8f0;
+  --text2:#94a3b8;
+  --muted:#3a4a6a;
+  --mono:'JetBrains Mono','Courier New',monospace;
+  --sans:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:12px;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* ════ STARTUP ════ */
+.screen{position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;background:var(--bg)}
+.screen-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:36px 40px;width:500px;text-align:center;box-shadow:0 0 60px #00d4ff0a,0 24px 80px #00000080}
+
+.logo-icon{font-size:42px;margin-bottom:14px;display:block}
+.screen-card h2{font-size:20px;font-weight:700;color:var(--text);letter-spacing:-.3px;margin-bottom:6px}
+.screen-card .sub{font-size:12px;color:var(--text2);margin-bottom:24px;font-weight:300}
+
+/* Choices */
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.choice{padding:14px 12px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);
+  color:var(--text2);font-family:var(--sans);font-size:11px;cursor:pointer;transition:all .2s;text-align:left;line-height:1.5}
+.choice strong{display:block;font-size:13px;margin-bottom:3px;font-weight:600}
+.choice:hover{border-color:var(--border2);background:var(--surface)}
+.choice.ok{border-color:var(--green);background:#001a12;color:var(--green)}
+.choice.ok strong{color:#4eefc0}
+.choice.err{border-color:var(--red);background:#1a0008;color:#f87171}
+.choice.err strong{color:#fca5a5}
+
+/* Feature list */
+.features{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:12px 14px;text-align:left;margin-bottom:20px}
+.features h4{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+.features li{list-style:none;font-size:11px;color:var(--text2);padding:2px 0;display:flex;align-items:center;gap:8px}
+.features li span{color:var(--cyan);font-size:14px}
+
+.start-btn{width:100%;padding:13px;border-radius:10px;border:none;
+  background:linear-gradient(135deg,#0ea5e9,#00d4ff);color:#050a14;
+  font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;
+  letter-spacing:.04em;transition:all .2s;box-shadow:0 4px 20px #00d4ff30}
+.start-btn:hover{box-shadow:0 6px 28px #00d4ff50;transform:translateY(-1px)}
+.note{font-size:10px;color:var(--muted);margin-top:10px}
+
+/* ════ BLOCKED SCREEN ════ */
+#blockedScreen{display:none}
+.blocked-card{background:var(--surface);border:1.5px solid var(--red);border-radius:16px;
+  padding:40px;width:480px;text-align:center;box-shadow:0 0 60px #ef444420}
+.blocked-icon{font-size:64px;margin-bottom:16px;animation:pulse-red 1.5s infinite}
+@keyframes pulse-red{0%,100%{filter:drop-shadow(0 0 8px #ef4444)}50%{filter:drop-shadow(0 0 24px #ef4444)}}
+.blocked-card h2{font-size:22px;font-weight:800;color:#ef4444;letter-spacing:-.3px;margin-bottom:6px}
+.blocked-card .blk-sub{font-size:13px;color:var(--text2);margin-bottom:20px}
+.sensor-readout{background:#120008;border:1px solid #ef444440;border-radius:8px;padding:14px 16px;margin-bottom:20px}
+.sr-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #1a000a}
+.sr-row:last-child{border-bottom:none}
+.sr-label{font-size:11px;color:var(--text2)}
+.sr-val{font-family:var(--mono);font-size:12px;font-weight:700;color:#ef4444}
+.sr-val.warn{color:var(--yellow)}
+.blk-msg{font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:20px;padding:12px;background:var(--surface2);border-radius:8px}
+.back-btn{padding:11px 24px;border-radius:8px;border:1.5px solid var(--border);background:transparent;
+  color:var(--text2);font-family:var(--sans);font-size:12px;cursor:pointer;transition:all .2s}
+.back-btn:hover{border-color:var(--cyan);color:var(--cyan)}
+
+/* ════ TOPBAR ════ */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);
+  padding:8px 18px;display:flex;align-items:center;gap:10px;flex-shrink:0;
+  box-shadow:0 1px 20px #00000040}
+.topbar h1{font-size:13px;font-weight:700;color:var(--text);letter-spacing:.02em}
+.chip{font-size:9px;padding:3px 8px;border-radius:20px;border:1px solid;font-weight:600;letter-spacing:.06em}
+.chip-c{border-color:var(--cyan-dim);color:var(--cyan);background:#00d4ff10}
+.chip-b{border-color:#8b5cf640;color:var(--purple);background:#8b5cf610}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:blink 1.4s infinite;margin-right:3px;box-shadow:0 0 6px var(--green)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.live-wrap{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--green);margin-left:auto}
+#calibBadge{font-size:9px;padding:3px 8px;border-radius:20px;border:1px solid #00d4ff50;color:var(--cyan);background:#00d4ff10;display:none}
+
+/* ════ MAIN ════ */
+.main{display:flex;flex:1;overflow:hidden}
+
+/* ════ LEFT ════ */
+.left{display:flex;flex-direction:column;width:56%;border-right:1px solid var(--border)}
+.vcont{position:relative;flex:1;overflow:hidden;background:#000;display:flex;align-items:center;justify-content:center}
+#video{width:100%;height:100%;object-fit:cover;display:block;transform:scaleX(-1)}
+#overlay{position:absolute;inset:0;width:100%;height:100%;transform:scaleX(-1)}
+.init-msg{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;pointer-events:none}
+.spinner{width:36px;height:36px;border:2px solid var(--border);border-top-color:var(--cyan);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.init-txt{font-size:12px;color:var(--text2)}
+
+/* Calib overlay */
+#calibOverlay{position:absolute;inset:0;background:#00000088;backdrop-filter:blur(2px);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:10}
+#calibOverlay.show{display:flex}
+.calib-card{background:var(--surface);border:1px solid var(--cyan);border-radius:12px;padding:20px 26px;width:280px;text-align:center;box-shadow:0 0 30px #00d4ff20}
+.calib-card h3{font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px}
+.calib-card p{font-size:10px;color:var(--text2);margin-bottom:12px;line-height:1.5}
+.calib-track{background:var(--surface2);border-radius:6px;height:6px;overflow:hidden}
+.calib-fill{height:100%;background:linear-gradient(90deg,#0ea5e9,#00d4ff);border-radius:6px;transition:width .1s;width:0%}
+.calib-pct{font-family:var(--mono);font-size:14px;color:var(--cyan);margin-top:6px;font-weight:700}
+.calib-live{font-size:9px;color:var(--text2);margin-top:6px;line-height:1.6}
+
+/* ════ METRICS BAR ════ */
+.mbar{display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid var(--border);flex-shrink:0}
+.mbar-item{background:var(--surface2);padding:6px 8px;text-align:center;border-right:1px solid var(--border)}
+.mbar-item:last-child{border-right:none}
+.ml{font-size:8px;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:2px;font-weight:500}
+.mv{font-family:var(--mono);font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+.mtrack{height:2px;background:var(--border2);border-radius:2px;margin-top:4px;overflow:hidden}
+.mfill{height:100%;border-radius:2px;transition:width .2s}
+
+/* ════ RIGHT ════ */
+.right{display:flex;flex-direction:column;width:44%;overflow-y:auto;background:var(--bg)}
+.right::-webkit-scrollbar{width:4px}
+.right::-webkit-scrollbar-track{background:transparent}
+.right::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.pane{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 13px}
+.ptitle{font-size:9px;font-weight:600;color:var(--text2);text-transform:uppercase;
+  letter-spacing:.1em;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.ptitle::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ════ STATE ════ */
+.state-wrap{display:flex;flex-direction:column;align-items:center;padding:10px 8px 14px}
+.st-icon{font-size:38px;margin-bottom:5px}
+.st-name{font-size:19px;font-weight:800;letter-spacing:-.3px}
+.st-desc{font-size:10px;color:var(--text2);margin-top:3px;text-align:center;line-height:1.4;min-height:28px}
+.flow{display:flex;align-items:center;justify-content:center;gap:2px;flex-wrap:wrap;margin-top:10px}
+.fstep{font-size:7px;padding:3px 6px;border-radius:20px;border:1px solid var(--border);
+  color:var(--muted);background:var(--surface2);white-space:nowrap;font-weight:500}
+.fstep.on{background:linear-gradient(135deg,#0ea5e9,#00d4ff);border-color:var(--cyan);color:#050a14;font-weight:700;box-shadow:0 0 12px #00d4ff40}
+.fstep.done{border-color:var(--green-dim);color:var(--green)}
+.farr{font-size:7px;color:var(--border)}
+
+/* ════ CALIBRATION RESULT ════ */
+.cr-table{display:flex;flex-direction:column;gap:4px;font-size:10px}
+.cr-row{display:flex;justify-content:space-between;padding:4px 8px;background:var(--surface2);border-radius:5px}
+.cr-label{color:var(--text2)}
+.cr-val{font-family:var(--mono);font-weight:700;color:var(--cyan)}
+.cr-val.thr{color:var(--yellow)}
+.cr-val.fixed{color:var(--text2)}
+#calibResult{display:none}
+#calibWait{font-size:10px;color:var(--muted);padding:4px 2px}
+
+/* ════ SIGNALS ════ */
+.sig-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.sig{border:1px solid var(--border);border-radius:8px;padding:8px 10px;background:var(--surface2);transition:all .25s}
+.sig-label{font-size:8px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}
+.sig-body{display:flex;justify-content:space-between;align-items:flex-end}
+.sig-v{font-family:var(--mono);font-size:16px;font-weight:700;color:var(--text)}
+.sig-tag{font-size:8px;padding:2px 7px;border-radius:10px;border:1px solid var(--border);color:var(--text2);background:var(--surface);font-weight:500}
+.sig.ok{border-color:var(--green-dim)}
+.sig.ok .sig-v{color:var(--green)}
+.sig.ok .sig-tag{border-color:var(--green-dim);color:var(--green);background:#00c89610}
+.sig.bad{border-color:#ef444440;background:#120008;animation:pulse-border .6s infinite}
+.sig.bad .sig-v{color:var(--red)}
+.sig.bad .sig-tag{border-color:#ef444440;color:var(--red);background:#ef444412}
+@keyframes pulse-border{0%,100%{box-shadow:0 0 0 0 #ef444420}50%{box-shadow:0 0 0 3px #ef444010}}
+
+/* ════ ALERTS ════ */
+.alert-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.al{border:1px solid var(--border);border-radius:8px;padding:8px 6px;text-align:center;background:var(--surface2);transition:all .3s}
+.al-ico{font-size:18px;margin-bottom:3px}
+.al-name{font-size:8px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:2px;text-transform:uppercase}
+.al-desc{font-size:7.5px;color:var(--muted);line-height:1.3}
+.al-track{height:2px;background:var(--border2);border-radius:1px;margin-top:5px;overflow:hidden}
+.al-fill{height:100%;border-radius:1px;transition:width .2s}
+.al.a1{border-color:#f59e0b50;background:#120e00;box-shadow:0 0 10px #f59e0b15}
+.al.a1 .al-name{color:var(--yellow)}.al.a1 .al-desc{color:#a0703a}
+.al.a2{border-color:#f9731650;background:#140800;box-shadow:0 0 12px #f9731618}
+.al.a2 .al-name{color:var(--orange)}.al.a2 .al-desc{color:#a05020}
+.al.a3{border-color:#ef444460;background:#140006;box-shadow:0 0 14px #ef444425;animation:al3pulse .5s infinite}
+.al.a3 .al-name{color:var(--red)}.al.a3 .al-desc{color:#a02030}
+@keyframes al3pulse{0%,100%{opacity:1}50%{opacity:.85}}
+
+/* ════ COUNTERS ════ */
+.ctr-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ctr{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:8px 10px;display:flex;justify-content:space-between;align-items:center}
+.ctr-l{font-size:9px;color:var(--text2);font-weight:500;line-height:1.3}
+.ctr-v{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--cyan)}
+
+/* ════ ALCOOL ════ */
+.alco-row{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px}
+.alco-led{width:10px;height:10px;border-radius:50%;flex-shrink:0;box-shadow:0 0 6px currentColor}
+.alco-info{flex:1}
+.alco-st{font-size:11px;font-weight:600}
+.alco-sub{font-size:8px;color:var(--text2);margin-top:1px}
+.sim-chip{font-size:7.5px;padding:2px 6px;border-radius:8px;border:1px solid #4a3a7a;color:#8b5cf6;background:#4a1d9620;flex-shrink:0}
+
+/* ════ HW PANEL ════ */
+.hw-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.hw-box{background:var(--surface2);border-radius:7px;border:1px solid;padding:8px 9px}
+.hw-box.real{border-color:var(--green-dim)}
+.hw-box.sim{border-color:#4a1d96}
+.hw-head{font-size:8px;font-weight:700;letter-spacing:.07em;margin-bottom:4px;text-transform:uppercase}
+.hw-box.real .hw-head{color:var(--green)}
+.hw-box.sim .hw-head{color:var(--purple)}
+.hw-item{font-size:8.5px;color:var(--text2);padding:1.5px 0;display:flex;align-items:center;gap:5px;line-height:1.4}
+.hw-note{margin-top:6px;font-size:8px;color:var(--muted);padding-top:5px;border-top:1px solid var(--border)}
+
+/* ════ LOG ════ */
+.logbox{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;height:80px;overflow-y:auto;padding:5px 8px;display:flex;flex-direction:column;gap:1px}
+.logbox::-webkit-scrollbar{width:3px}
+.logbox::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.le{display:flex;gap:6px;font-size:9px;line-height:1.4}
+.lts{color:var(--muted);flex-shrink:0;font-family:var(--mono)}
+.lok{color:var(--green)}.lwarn{color:var(--yellow)}.lerr{color:var(--red)}
+.linfo{color:var(--cyan)}.lrfid{color:var(--purple)}.lcal{color:#00d4ff}
+
+/* ════ PARKING ════ */
+#parkingCanvas{display:block;width:100%;border-radius:0 0 0 0}
+.rst-btn{display:none;width:calc(100% - 24px);margin:7px 12px;padding:8px;border-radius:8px;
+  border:1px solid var(--border);background:transparent;color:var(--text2);
+  font-family:var(--sans);font-size:11px;cursor:pointer;transition:all .2s;font-weight:500}
+.rst-btn:hover{border-color:var(--cyan);color:var(--cyan);background:#00d4ff08}
+.rst-btn.show{display:block}
 </style>
 </head>
 <body>
 
+<!-- ══════════ STARTUP ══════════ -->
+<div class="screen" id="startScreen">
+  <div class="screen-card">
+    <span class="logo-icon">🚗</span>
+    <h2>Voiture Robot Intelligente</h2>
+    <p class="sub">Système de détection de somnolence — MediaPipe AI + Calibration personnalisée</p>
+
+    <div class="choices">
+      <button class="choice ok" id="btnNormal" onclick="selectAlco('normal')">
+        <strong>✅ Normal</strong>
+        0.0 g/L — conduite autorisée<br>
+        <span style="font-size:9px;color:#00c89680">MQ-3 : 0 ADC</span>
+      </button>
+      <button class="choice" id="btnAlco" onclick="selectAlco('alco')">
+        <strong>🚨 Alcoolisé</strong>
+        0.87 g/L — seuil dépassé<br>
+        <span style="font-size:9px;color:#f8717180">MQ-3 : 445 ADC</span>
+      </button>
+    </div>
+
+    <div class="features">
+      <h4>Détection active — 5 signaux indépendants</h4>
+      <ul>
+        <li><span>👁</span> EAR — fermeture des yeux (seuil calibré pour vous)</li>
+        <li><span>🔻</span> Head Pitch — inclinaison tête vers le bas</li>
+        <li><span>📊</span> PERCLOS — % frames somnolentes sur 2 secondes</li>
+        <li><span>👁‍🗨</span> Blink Rate — clignements/min (< 10 = somnolent)</li>
+        <li><span>💬</span> MAR — détection bâillements</li>
+      </ul>
+    </div>
+
+    <button class="start-btn" onclick="startDemo()">Démarrer — Calibration automatique →</button>
+    <p class="note">Requis : VS Code Live Server (HTTP) · Autoriser l'accès webcam</p>
+  </div>
+</div>
+
+<!-- ══════════ BLOCKED ══════════ -->
+<div class="screen" id="blockedScreen">
+  <div class="blocked-card">
+    <div class="blocked-icon">🚫</div>
+    <h2>Démarrage impossible</h2>
+    <p class="blk-sub">Taux d'alcoolémie élevé détecté au démarrage</p>
+
+    <div class="sensor-readout">
+      <div class="sr-row">
+        <span class="sr-label">Capteur MQ-3 (ADC)</span>
+        <span class="sr-val">445 / 1023</span>
+      </div>
+      <div class="sr-row">
+        <span class="sr-label">Alcoolémie estimée</span>
+        <span class="sr-val">0.87 g/L</span>
+      </div>
+      <div class="sr-row">
+        <span class="sr-label">Seuil légal</span>
+        <span class="sr-val warn">0.50 g/L</span>
+      </div>
+      <div class="sr-row">
+        <span class="sr-label">Dépassement</span>
+        <span class="sr-val">+74 %</span>
+      </div>
+    </div>
+
+    <div class="blk-msg">
+      Le système de sécurité a détecté un taux d'alcool supérieur à la limite légale (0.5 g/L).<br><br>
+      Le véhicule est <strong style="color:#ef4444">verrouillé</strong>. Veuillez confier les clés à une personne sobre ou attendre la décroissance naturelle du taux d'alcoolémie.
+    </div>
+
+    <button class="back-btn" onclick="goBack()">← Retour à l'écran de démarrage</button>
+  </div>
+</div>
+
+<!-- ══════════ TOPBAR ══════════ -->
 <div class="topbar">
-  <div>
-    <div class="topbar h1">🚗 Voiture Robot Intelligente — Sécurité Active Conducteur</div>
-    <div class="sub">Raspberry Pi · MediaPipe Face Mesh 468 landmarks · Arduino Mega 2560 · EAR / MAR / PERCLOS · Dataset NTHU-DDD 133 042 images</div>
-  </div>
-  <div class="live"><div class="dot"></div>Simulation active</div>
+  <span style="font-size:17px">🚗</span>
+  <h1>Voiture Robot Intelligente</h1>
+  <span class="chip chip-c">Sécurité Active</span>
+  <span class="chip chip-b">MediaPipe AI</span>
+  <span id="calibBadge">🎯 Calibration…</span>
+  <div class="live-wrap"><div class="live-dot"></div><span id="liveLabel">Init…</span></div>
 </div>
 
-<div class="grid">
-  <!-- Machine à états -->
-  <div class="panel">
-    <div class="ptitle">📟 Machine à états</div>
-    <div class="state-display">
-      <div class="state-icon" id="state-icon">✅</div>
-      <div class="state-name" id="state-name">AUTORISÉ</div>
-      <div class="state-desc" id="state-desc">Alcool OK — Conduite normale</div>
+<!-- ══════════ MAIN ══════════ -->
+<div class="main">
+
+  <!-- ─── LEFT ─── -->
+  <div class="left">
+    <div class="vcont">
+      <video id="video" autoplay muted playsinline></video>
+      <canvas id="overlay"></canvas>
+
+      <!-- Calibration overlay -->
+      <div id="calibOverlay">
+        <div class="calib-card">
+          <h3>🎯 Calibration personnalisée</h3>
+          <p>Regardez droit devant,<br>yeux ouverts, tête droite.</p>
+          <div class="calib-track"><div class="calib-fill" id="calibFill"></div></div>
+          <div class="calib-pct" id="calibPct">0 %</div>
+          <div class="calib-live" id="calibLive">Mesure en cours…</div>
+        </div>
+      </div>
+
+      <div class="init-msg" id="initMsg">
+        <div class="spinner"></div>
+        <span class="init-txt" id="initText">Chargement du modèle IA…</span>
+      </div>
     </div>
-    <div class="state-flow">
-      <div class="sf-node done" id="sf-idle">IDLE</div>
-      <div class="sf-arr">→</div>
-      <div class="sf-node done" id="sf-verif">VÉRIF</div>
-      <div class="sf-arr">→</div>
-      <div class="sf-node active" id="sf-auto">AUTORISÉ</div>
-      <div class="sf-arr">→</div>
-      <div class="sf-node" id="sf-a1">ALERTE 1</div>
-      <div class="sf-arr">→</div>
-      <div class="sf-node" id="sf-a2">ALERTE 2</div>
-      <div class="sf-arr">→</div>
-      <div class="sf-node" id="sf-a3">ALERTE 3</div>
-      <div class="sf-arr">→</div>
-      <div class="sf-node" id="sf-park">PARKING</div>
-    </div>
-    <div class="btn-row" style="margin-top:10px">
-      <button class="btn btn-green" onclick="setScenario('normal')">▶ Normal</button>
-      <button class="btn btn-yellow" onclick="setScenario('drowsy')">😴 Somnolence</button>
-      <button class="btn btn-red" onclick="setScenario('alcohol')">🍺 Alcool</button>
-      <button class="btn btn-blue" onclick="setScenario('emergency')">🚨 Urgence</button>
+
+    <!-- Metrics bar -->
+    <div class="mbar">
+      <div class="mbar-item">
+        <div class="ml">👁 EAR</div>
+        <div class="mv" id="mEAR" style="color:var(--green)">—</div>
+        <div class="mtrack"><div class="mfill" id="bEAR" style="width:0%"></div></div>
+      </div>
+      <div class="mbar-item">
+        <div class="ml">🔻 Head</div>
+        <div class="mv" id="mHEAD" style="color:var(--purple)">—</div>
+        <div class="mtrack"><div class="mfill" id="bHEAD" style="width:0%"></div></div>
+      </div>
+      <div class="mbar-item">
+        <div class="ml">📊 PERCLOS</div>
+        <div class="mv" id="mPERC" style="color:var(--green)">—</div>
+        <div class="mtrack"><div class="mfill" id="bPERC" style="width:0%"></div></div>
+      </div>
+      <div class="mbar-item">
+        <div class="ml">👁‍🗨 Blink/min</div>
+        <div class="mv" id="mBLINK" style="color:var(--cyan)">—</div>
+        <div class="mtrack"><div class="mfill" id="bBLINK" style="width:0%"></div></div>
+      </div>
+      <div class="mbar-item">
+        <div class="ml">⚡ Fatigue</div>
+        <div class="mv" id="mFAT" style="color:var(--green)">—</div>
+        <div class="mtrack"><div class="mfill" id="bFAT" style="width:0%"></div></div>
+      </div>
     </div>
   </div>
 
-  <!-- Métriques somnolence -->
-  <div class="panel">
-    <div class="ptitle">👁️ Indicateurs somnolence temps réel</div>
-    <div>
-      <div class="metric-row">
-        <span class="metric-label">EAR — Eye Aspect Ratio</span>
-        <span class="metric-val" id="ear-val" style="color:var(--green)">0.312</span>
-      </div>
-      <div class="metric-bar"><div class="metric-fill" id="ear-bar" style="width:69%;background:var(--green)"></div></div>
-      <div class="threshold-line">Seuil : 0.261 (Youden / NTHU-DDD)</div>
-    </div>
-    <div>
-      <div class="metric-row">
-        <span class="metric-label">MAR — Mouth Aspect Ratio</span>
-        <span class="metric-val" id="mar-val" style="color:var(--green)">0.41</span>
-      </div>
-      <div class="metric-bar"><div class="metric-fill" id="mar-bar" style="width:34%;background:var(--green)"></div></div>
-      <div class="threshold-line">Seuil : 0.65 (Abtahi 2014 / UTA-RLDD)</div>
-    </div>
-    <div>
-      <div class="metric-row">
-        <span class="metric-label">PERCLOS — % yeux fermés / 60 frames</span>
-        <span class="metric-val" id="perclos-val" style="color:var(--green)">8%</span>
-      </div>
-      <div class="metric-bar"><div class="metric-fill" id="perclos-bar" style="width:8%;background:var(--green)"></div></div>
-      <div class="threshold-line">Seuil : 35 % (standard NHTSA)</div>
-    </div>
-    <div>
-      <div class="metric-row">
-        <span class="metric-label">Head pose — roulis</span>
-        <span class="metric-val" id="pose-val" style="color:var(--green)">4°</span>
-      </div>
-      <div class="metric-bar"><div class="metric-fill" id="pose-bar" style="width:9%;background:var(--green)"></div></div>
-      <div class="threshold-line">Seuil : 20° roulis / 15° tangage</div>
-    </div>
-  </div>
+  <!-- ─── RIGHT ─── -->
+  <div class="right">
 
-  <!-- Alertes + alcool -->
-  <div class="panel">
-    <div class="ptitle">🚨 Niveaux d'alerte</div>
-    <div class="alert-grid">
-      <div class="alert-box active-0" id="al0">
-        <div class="al-icon">✅</div>
-        <div class="al-label">NORMAL</div>
-        <div style="font-size:9px;color:#2dc653;margin-top:2px">LED verte</div>
-      </div>
-      <div class="alert-box" id="al1">
-        <div class="al-icon">⚡</div>
-        <div class="al-label">ALERTE 1</div>
-        <div style="font-size:9px;color:var(--muted);margin-top:2px">Bip court</div>
-      </div>
-      <div class="alert-box" id="al2">
-        <div class="al-icon">🔔</div>
-        <div class="al-label">ALERTE 2</div>
-        <div style="font-size:9px;color:var(--muted);margin-top:2px">Bip long</div>
-      </div>
-      <div class="alert-box" id="al3">
-        <div class="al-icon">🚨</div>
-        <div class="al-label">ALERTE 3</div>
-        <div style="font-size:9px;color:var(--muted);margin-top:2px">Sirène</div>
+    <!-- État -->
+    <div class="pane">
+      <div class="ptitle">État système</div>
+      <div class="state-wrap">
+        <div class="st-icon" id="stateIcon">⏳</div>
+        <div class="st-name" id="stateName" style="color:var(--text2)">Initialisation</div>
+        <div class="st-desc" id="stateDesc">Chargement du modèle IA…</div>
+        <div class="flow">
+          <div class="fstep" id="sf0">Veille</div><div class="farr">›</div>
+          <div class="fstep" id="sf1">Démarrage</div><div class="farr">›</div>
+          <div class="fstep" id="sf2">Calibration</div><div class="farr">›</div>
+          <div class="fstep" id="sf3">Normal</div><div class="farr">›</div>
+          <div class="fstep" id="sf4">Alerte 1</div><div class="farr">›</div>
+          <div class="fstep" id="sf5">Alerte 2</div><div class="farr">›</div>
+          <div class="fstep" id="sf6">Alerte 3</div><div class="farr">›</div>
+          <div class="fstep" id="sf7">Parking</div>
+        </div>
       </div>
     </div>
-    <div style="margin-top:10px">
-      <div class="ptitle">🍺 Alcoolémie MQ-3</div>
-      <div class="metric-row" style="margin-top:4px">
-        <span class="metric-label">Valeur ADC (A0)</span>
-        <span class="metric-val" id="mq3-val" style="color:var(--green)">213</span>
-      </div>
-      <div class="metric-bar"><div class="metric-fill" id="mq3-bar" style="width:21%;background:var(--green)"></div></div>
-      <div class="threshold-line">Seuil blocage : 400 ADC (~0.5 g/L)</div>
-    </div>
-    <div style="margin-top:6px">
-      <div class="ptitle" style="margin-bottom:4px">🅿️ RFID Parking</div>
-      <div style="display:flex;justify-content:space-between;font-size:10px">
-        <span>Zone détectée (MFRC522)</span>
-        <span id="rfid-status" style="color:var(--muted)">❌ Hors zone</span>
+
+    <!-- Calibration result -->
+    <div class="pane">
+      <div class="ptitle">Seuils personnalisés</div>
+      <div id="calibWait" style="font-size:10px;color:var(--muted)">En attente de calibration…</div>
+      <div class="cr-table" id="calibResult">
+        <div class="cr-row"><span class="cr-label">EAR baseline mesuré</span><span class="cr-val" id="crEB">—</span></div>
+        <div class="cr-row"><span class="cr-label">👁 Seuil EAR (×0.75)</span><span class="cr-val thr" id="crET">—</span></div>
+        <div class="cr-row"><span class="cr-label">Head baseline mesuré</span><span class="cr-val" id="crHB">—</span></div>
+        <div class="cr-row"><span class="cr-label">🔻 Seuil Head (+0.08)</span><span class="cr-val thr" id="crHT">—</span></div>
+        <div class="cr-row"><span class="cr-label">📊 Seuil PERCLOS</span><span class="cr-val fixed">&gt; 30 %</span></div>
+        <div class="cr-row"><span class="cr-label">👁‍🗨 Seuil Blink Rate</span><span class="cr-val fixed">&lt; 10 /min</span></div>
       </div>
     </div>
-  </div>
-</div>
 
-<div class="grid2">
-  <!-- Face landmarks -->
-  <div class="panel">
-    <div class="ptitle">👤 MediaPipe Face Mesh — 468 landmarks 3D (simulation)</div>
-    <canvas id="faceCanvas" height="140"></canvas>
-    <div style="display:flex;gap:12px;margin-top:6px;flex-wrap:wrap">
-      <span style="font-size:9px;color:#1a3a1a">● Points faciaux</span>
-      <span style="font-size:9px;color:var(--green)">● Contours yeux</span>
-      <span style="font-size:9px;color:var(--blue)">● Contours bouche</span>
-      <span style="font-size:9px;color:var(--yellow)">● Axe crânien (pose)</span>
-    </div>
-  </div>
-
-  <!-- Serial log -->
-  <div class="panel">
-    <div class="ptitle" style="display:flex;justify-content:space-between;align-items:center">
-      <span>📡 Journal UART — RPi ↔ Arduino Mega</span>
-      <button class="btn btn-blue" onclick="clearSerial()" style="padding:2px 8px">Effacer</button>
-    </div>
-    <div class="serial" id="serial-log"></div>
-    <div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap">
-      <span style="font-size:9px;color:var(--green)">● Arduino→RPi JSON</span>
-      <span style="font-size:9px;color:var(--blue)">● RPi→Arduino CMD</span>
-      <span style="font-size:9px;color:var(--yellow)">● Warning</span>
-      <span style="font-size:9px;color:var(--red)">● Alerte</span>
-    </div>
-  </div>
-</div>
-
-<div class="grid4">
-  <!-- NTHU-DDD dataset -->
-  <div class="panel">
-    <div class="ptitle">📊 Validation — NTHU-DDD</div>
-    <div class="ds-metric"><span>Dataset</span><span class="ds-val">NTHU-DDD (2016)</span></div>
-    <div class="ds-metric"><span>Total images</span><span class="ds-val">133 042</span></div>
-    <div class="ds-metric"><span>Sujets</span><span class="ds-val">35 conducteurs</span></div>
-    <div class="ds-metric"><span>Échantillonnés</span><span class="ds-val">8 000 images</span></div>
-    <div class="ds-metric"><span>AUC EAR</span><span class="ds-val">0.678</span></div>
-    <div class="ds-metric"><span>Seuil Youden EAR</span><span class="ds-val">0.261</span></div>
-    <div class="ds-metric"><span>AUC MAR</span><span class="ds-warn">0.454 — non retenu</span></div>
-    <div class="ds-metric"><span>PERCLOS</span><span class="ds-val">35% (NHTSA)</span></div>
-    <div style="margin-top:6px;font-size:9px;color:var(--muted)">AUC EAR</div>
-    <div class="roc-bar"><div class="roc-fill" style="width:67.8%"></div></div>
-    <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--muted)"><span>0.5</span><span>0.678</span><span>1.0</span></div>
-  </div>
-
-  <!-- Benchmark RPi -->
-  <div class="panel">
-    <div class="ptitle">⚡ Latence MediaPipe — Benchmark</div>
-    <div class="bench-row"><span>PC Windows</span><span class="bench-ok">~20 ms · 50 fps</span></div>
-    <div class="bench-row"><span>Raspberry Pi 4B</span><span class="bench-ok">~90 ms · 11 fps ✅</span></div>
-    <div class="bench-row"><span>Raspberry Pi 3B</span><span class="bench-warn">~165 ms · 6 fps ✅*</span></div>
-    <div style="margin-top:8px">
-      <div class="metric-row">
-        <span class="metric-label">Latence totale (UART inclus)</span>
-        <span style="font-size:12px;font-weight:700;color:var(--green)">≤ 180 ms</span>
+    <!-- Signaux -->
+    <div class="pane">
+      <div class="ptitle">Signaux vision par ordinateur</div>
+      <div class="sig-grid">
+        <div class="sig" id="sigEye">
+          <div class="sig-label">👁 Yeux — EAR</div>
+          <div class="sig-body">
+            <span class="sig-v" id="sEarV">—</span>
+            <span class="sig-tag" id="sEarT">En attente</span>
+          </div>
+        </div>
+        <div class="sig" id="sigHead">
+          <div class="sig-label">🔻 Tête — Pitch</div>
+          <div class="sig-body">
+            <span class="sig-v" id="sHeadV">—</span>
+            <span class="sig-tag" id="sHeadT">En attente</span>
+          </div>
+        </div>
+        <div class="sig" id="sigPerc">
+          <div class="sig-label">📊 PERCLOS %</div>
+          <div class="sig-body">
+            <span class="sig-v" id="sPercV">—</span>
+            <span class="sig-tag" id="sPercT">En attente</span>
+          </div>
+        </div>
+        <div class="sig" id="sigBlink">
+          <div class="sig-label">👁‍🗨 Blink Rate</div>
+          <div class="sig-body">
+            <span class="sig-v" id="sBlinkV">—</span>
+            <span class="sig-tag" id="sBlinkT">En attente</span>
+          </div>
+        </div>
       </div>
-      <div class="metric-bar"><div class="metric-fill" style="width:90%;background:var(--green)"></div></div>
-      <div class="threshold-line">SR6 &lt; 200 ms ✅ respecté</div>
     </div>
-    <div style="font-size:9px;color:var(--muted);margin-top:4px">
-      * RPi 3B : 320×240 recommandé (+40% perf)<br>
-      XNNPACK NEON ARM acceleration active
+
+    <!-- Alertes -->
+    <div class="pane">
+      <div class="ptitle">Niveaux d'alerte</div>
+      <div class="alert-grid">
+        <div class="al" id="aBox1">
+          <div class="al-ico">😴</div>
+          <div class="al-name">Alerte 1</div>
+          <div class="al-desc">Signal détecté — avertissement</div>
+          <div class="al-track"><div class="al-fill" id="aF1" style="width:0%;background:var(--yellow)"></div></div>
+        </div>
+        <div class="al" id="aBox2">
+          <div class="al-ico">⚠️</div>
+          <div class="al-name">Alerte 2</div>
+          <div class="al-desc">Danger — ralentissement auto</div>
+          <div class="al-track"><div class="al-fill" id="aF2" style="width:0%;background:var(--orange)"></div></div>
+        </div>
+        <div class="al" id="aBox3">
+          <div class="al-ico">🚨</div>
+          <div class="al-name">Alerte 3</div>
+          <div class="al-desc">Critique — parking forcé</div>
+          <div class="al-track"><div class="al-fill" id="aF3" style="width:0%;background:var(--red)"></div></div>
+        </div>
+      </div>
     </div>
-  </div>
 
-  <!-- Hardware -->
-  <div class="panel">
-    <div class="ptitle">🔧 Matériel</div>
-    <div class="hw-item"><span>Raspberry Pi 3/4</span><span class="hw-tag">Vidéo + logique</span></div>
-    <div class="hw-item"><span>Arduino Mega 2560</span><span class="hw-tag">Contrôle HW</span></div>
-    <div class="hw-item"><span>Caméra USB / Pi Camera</span><span class="hw-tag">USB</span></div>
-    <div class="hw-item"><span>MQ-3 (alcool)</span><span class="hw-tag">A0 ADC</span></div>
-    <div class="hw-item"><span>MFRC522 (RFID)</span><span class="hw-tag">SPI D50–53</span></div>
-    <div class="hw-item"><span>L298N (moteurs DC)</span><span class="hw-tag">D7–D12</span></div>
-    <div class="hw-item"><span>TCRT5000 × 2 (ligne)</span><span class="hw-tag">A1, A2</span></div>
-    <div class="hw-item"><span>SSD1306 OLED 128×64</span><span class="hw-tag">I2C D20–21</span></div>
-    <div class="hw-item"><span>Buzzer + LEDs R/J/V</span><span class="hw-tag">D3–D6 PWM</span></div>
-  </div>
-
-  <!-- Calibration & refs -->
-  <div class="panel">
-    <div class="ptitle">🎯 Calibration & Références</div>
-    <div class="ds-metric"><span>Calibration EAR</span><span class="ds-val">30 frames/personne</span></div>
-    <div class="ds-metric"><span>Fenêtre PERCLOS</span><span class="ds-val">60 frames (~2 s)</span></div>
-    <div class="ds-metric"><span>Délai alerte→parking</span><span class="ds-val">5 s × 3 niveaux</span></div>
-    <div class="ds-metric"><span>Landmarks EAR</span><span class="ds-val">pts 33,160,158,133,153,144</span></div>
-    <div style="margin-top:6px;border-top:1px solid var(--border);padding-top:6px;font-size:9px;color:var(--text);line-height:1.7">
-      Soukupová &amp; Čech (2016) — EAR 0.25–0.28<br>
-      NHTSA / Wierwille (1994) — PERCLOS 35%<br>
-      Abtahi et al. (2014) — MAR 0.65 (YAWdd)<br>
-      NTHU-DDD (2016) — 133K images, 35 sujets<br>
-      UTA-RLDD (2019) — 60 sujets, conditions réelles
+    <!-- Compteurs -->
+    <div class="pane">
+      <div class="ptitle">Statistiques session</div>
+      <div class="ctr-grid">
+        <div class="ctr"><span class="ctr-l">Frames<br>fatigue</span><span class="ctr-v" id="cFat">0</span></div>
+        <div class="ctr"><span class="ctr-l">Récupé-<br>rations</span><span class="ctr-v" id="cRecov">0</span></div>
+        <div class="ctr"><span class="ctr-l">Bâille-<br>ments</span><span class="ctr-v" id="cYawn">0</span></div>
+        <div class="ctr"><span class="ctr-l">Parkings<br>autonomes</span><span class="ctr-v" id="cPark">0</span></div>
+      </div>
     </div>
-  </div>
-</div>
 
-<script>
-const STATES = {
-  idle:     {icon:'⏸️', name:'IDLE',             desc:'Système en attente', color:'#4a6a4a', alert:null},
-  verif:    {icon:'🔍', name:'VÉRIFICATION',      desc:'Lecture MQ-3 alcool…', color:'#4a6a4a', alert:null},
-  autorise: {icon:'✅', name:'AUTORISÉ',           desc:'Alcool OK — Conduite normale', color:'#2dc653', alert:0},
-  bloque:   {icon:'🚫', name:'BLOQUÉ',             desc:'Alcool dépassé — Moteurs OFF', color:'#e53e3e', alert:null},
-  alerte1:  {icon:'⚡', name:'ALERTE 1',           desc:'Somnolence détectée — Bip court', color:'#f5a623', alert:1},
-  alerte2:  {icon:'🔔', name:'ALERTE 2',           desc:'Réaction absente 5s — Bip long', color:'#ed8936', alert:2},
-  alerte3:  {icon:'🚨', name:'ALERTE 3',           desc:'URGENCE — Sirène active', color:'#e53e3e', alert:3},
-  parking:  {icon:'🅿️', name:'PARKING AUTONOME',  desc:'Suivi ligne + arrêt sur RFID', color:'#4299e1', alert:null},
+    <!-- Alcool -->
+    <div class="pane">
+      <div class="ptitle">Capteur alcoolémie MQ-3</div>
+      <div class="alco-row" id="alcoBadge">
+        <div class="alco-led" id="alcoLed" style="color:var(--green);background:var(--green)"></div>
+        <div class="alco-info">
+          <div class="alco-st" id="alcoSt" style="color:var(--green)">Normal — 0.0 g/L</div>
+          <div class="alco-sub" id="alcoSub">MQ-3 : 0 ADC · Seuil légal : 0.5 g/L</div>
+        </div>
+        <span class="sim-chip">SIMULÉ</span>
+      </div>
+    </div>
+
+    <!-- Hardware -->
+    <div class="pane">
+      <div class="ptitle">Interface matérielle</div>
+      <div class="hw-grid">
+        <div class="hw-box real">
+          <div class="hw-head">✅ Réel — actif</div>
+          <div class="hw-item"><span>👁</span>Webcam + MediaPipe</div>
+          <div class="hw-item"><span>📐</span>EAR / PERCLOS / Blink</div>
+          <div class="hw-item"><span>🎯</span>Calibration auto</div>
+          <div class="hw-item"><span>⚡</span>Machine d'état alertes</div>
+        </div>
+        <div class="hw-box sim">
+          <div class="hw-head">🔵 Simulé</div>
+          <div class="hw-item"><span>🧪</span>Capteur MQ-3 alcool</div>
+          <div class="hw-item"><span>📡</span>Lecteur RFID RC522</div>
+          <div class="hw-item"><span>🚗</span>Contrôleur moteur</div>
+          <div class="hw-item"><span>🔊</span>Buzzer + GSM SMS</div>
+        </div>
+      </div>
+      <div class="hw-note">Déploiement réel : RPi 4 · Arduino Mega · MQ-3 · RC522 · L298N · SIM800</div>
+    </div>
+
+    <!-- Journal -->
+    <div class="pane">
+      <div class="ptitle">Journal système</div>
+      <div class="logbox" id="logBox"></div>
+    </div>
+
+    <!-- Parking -->
+    <div class="pane" style="padding:10px 13px 6px;flex-shrink:0">
+      <div class="ptitle">Parking autonome — RFID</div>
+      <canvas id="parkingCanvas" height="128"></canvas>
+      <button class="rst-btn" id="resetBtn" onclick="resetSystem()">↺ Réinitialiser la session</button>
+    </div>
+
+  </div><!-- /right -->
+</div><!-- /main -->
+
+<script type="module">
+import { FaceLandmarker, FilesetResolver, DrawingUtils }
+  from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/vision_bundle.mjs";
+
+/* ── CONSTANTS ── */
+const L_EYE=[33,160,158,133,153,144], R_EYE=[362,385,387,263,373,380];
+const MAR_THR=0.65, PERCLOS_WIN=60, PERCLOS_ALERT=30, BLINK_LOW=10;
+const FAT_FRAMES=40, ALERTE2_MS=5000, ALERTE3_MS=3000, CALIB_FRAMES=150;
+let EAR_THR=0.261, HEAD_THR=0.310;
+
+/* ── STATE ── */
+let state='init', fatigueFrames=0, recovCount=0, yawnCount=0, parkCount=0;
+let alerte1Start=0, alerte2Start=0, inYawn=false, alcoholOn=false;
+let perclosBuffer=[], frameN=0, lastVideoTime=-1, running=false;
+let landmarker=null, drawUtils=null, parkLoopRunning=false;
+let calibData=[], calibDone=false, earBaseline=0, headBaseline=0;
+let prevEarBelow=false, blinkTimestamps=[], blinkRate=0;
+
+/* ── DOM ── */
+const video=document.getElementById('video');
+const overlay=document.getElementById('overlay');
+const ctx=overlay.getContext('2d');
+
+/* ── STARTUP ── */
+let alcoChoice='normal';
+window.selectAlco=function(c){
+  alcoChoice=c;
+  document.getElementById('btnNormal').className='choice'+(c==='normal'?' ok':'');
+  document.getElementById('btnAlco').className='choice'+(c==='alco'?' err':'');
 };
-const SF_IDS    = ['sf-idle','sf-verif','sf-auto','sf-a1','sf-a2','sf-a3','sf-park'];
-const SF_STATES = ['idle','verif','autorise','alerte1','alerte2','alerte3','parking'];
-let currentState = 'autorise';
-let scenario = 'normal';
-let frame = 0;
-let alertTimer = 0;
-
-function setState(s) {
-  currentState = s;
-  const st = STATES[s];
-  document.getElementById('state-icon').textContent = st.icon;
-  document.getElementById('state-name').textContent = st.name;
-  document.getElementById('state-name').style.color = st.color;
-  document.getElementById('state-desc').textContent = st.desc;
-  const idx = SF_STATES.indexOf(s);
-  SF_IDS.forEach((id,i) => {
-    const el = document.getElementById(id);
-    el.className = 'sf-node';
-    if(i < idx) el.classList.add('done');
-    else if(i === idx) el.classList.add('active');
-  });
-  const aboxes = ['al0','al1','al2','al3'];
-  aboxes.forEach(id => document.getElementById(id).className = 'alert-box');
-  if(st.alert !== null) document.getElementById(aboxes[st.alert]).classList.add('active-'+st.alert);
-  const rfid = s === 'parking';
-  document.getElementById('rfid-status').textContent = rfid ? '✅ Zone détectée' : '❌ Hors zone';
-  document.getElementById('rfid-status').style.color = rfid ? 'var(--green)' : 'var(--muted)';
-}
-
-function serialLog(msg, cls) {
-  const log = document.getElementById('serial-log');
-  const t = new Date().toLocaleTimeString('fr',{hour12:false});
-  const div = document.createElement('div');
-  div.className = cls;
-  div.textContent = `[${t}] ${msg}`;
-  log.appendChild(div);
-  log.scrollTop = log.scrollHeight;
-  if(log.children.length > 80) log.removeChild(log.children[0]);
-}
-function clearSerial() { document.getElementById('serial-log').innerHTML=''; }
-
-// Face canvas
-const fc = document.getElementById('faceCanvas');
-const fctx = fc.getContext('2d');
-function resizeFC() { fc.width = fc.parentElement.offsetWidth - 20; fc.height = 140; }
-resizeFC();
-window.addEventListener('resize', resizeFC);
-
-function drawFace(ear, mar, poseAngle) {
-  const W = fc.width, H = fc.height;
-  fctx.clearRect(0,0,W,H);
-  fctx.fillStyle = '#050f05';
-  fctx.fillRect(0,0,W,H);
-  const cx = W/2, cy = H/2;
-  const headW = 50, headH = 65;
-  fctx.save();
-  fctx.translate(cx, cy);
-  fctx.rotate(poseAngle * Math.PI/180);
-  // Face outline
-  fctx.beginPath();
-  fctx.ellipse(0, 0, headW, headH, 0, 0, 2*Math.PI);
-  fctx.strokeStyle = '#2a4a2a'; fctx.lineWidth = 1; fctx.stroke();
-  // Mesh dots
-  fctx.fillStyle = '#1a3a1a';
-  for(let i=0;i<55;i++){
-    const a=(i/55)*2*Math.PI, r=headW*(0.4+0.6*Math.abs(Math.sin(i*1.9)));
-    fctx.beginPath(); fctx.arc(Math.cos(a)*r*0.8,Math.sin(a)*r*0.85,1,0,2*Math.PI); fctx.fill();
+window.startDemo=function(){
+  alcoholOn=(alcoChoice==='alco');
+  if(alcoholOn){
+    document.getElementById('startScreen').style.display='none';
+    document.getElementById('blockedScreen').style.display='flex';
+    return;
   }
-  // Eyes
-  const eyeY=-10, eyeOpen=Math.max(0.05, ear/0.4);
-  [-22, 22].forEach(ex => {
-    const eyeH = Math.max(1.5, 9*eyeOpen);
-    fctx.beginPath(); fctx.ellipse(ex,eyeY,11,eyeH,0,0,2*Math.PI);
-    fctx.strokeStyle='#2dc653'; fctx.lineWidth=1.5; fctx.stroke();
-    fctx.beginPath(); fctx.arc(ex,eyeY,2.5*eyeOpen,0,2*Math.PI);
-    fctx.fillStyle = eyeOpen<0.4?'#e53e3e':'#2dc653'; fctx.fill();
-  });
-  // Nose
-  fctx.beginPath(); fctx.moveTo(0,-5); fctx.lineTo(-4,14); fctx.lineTo(4,14);
-  fctx.strokeStyle='#2a4a2a'; fctx.lineWidth=1; fctx.stroke();
-  // Mouth
-  const mH = Math.max(1.5, 13*(mar/1.2));
-  fctx.beginPath(); fctx.ellipse(0,26,15,mH,0,0,2*Math.PI);
-  fctx.strokeStyle = mar>0.65?'#4299e1':'#2a5a2a'; fctx.lineWidth=1.5; fctx.stroke();
-  // Pose axis
-  fctx.beginPath(); fctx.moveTo(0,-headH+5); fctx.lineTo(0,-headH-12);
-  fctx.strokeStyle='#f5a623'; fctx.lineWidth=1.5; fctx.stroke();
-  fctx.restore();
-  fctx.fillStyle='#4a6a4a'; fctx.font='9px Courier New';
-  fctx.fillText('468 landmarks · 3D · MediaPipe', 4, H-4);
-  fctx.fillStyle='#f5a623';
-  fctx.fillText(`Pose: ${poseAngle.toFixed(1)}°`, W-80, H-4);
-}
-
-const SC = {
-  normal:    { ear:()=>0.29+Math.sin(frame*.05)*.03+(Math.random()-.5)*.01, mar:()=>0.35+(Math.random()-.5)*.05, perclos:()=>Math.max(0,5+Math.sin(frame*.02)*3), pose:()=>Math.sin(frame*.04)*3, mq3:()=>200+Math.sin(frame*.1)*25 },
-  drowsy:    { ear:()=>Math.max(.10,0.26-(frame%120)/120*.15+(Math.random()-.5)*.02), mar:()=>0.45+Math.sin(frame*.08)*.1, perclos:()=>Math.min(60,frame%120<60?(frame%60)/60*52:52), pose:()=>Math.sin(frame*.03)*13, mq3:()=>180+Math.random()*20 },
-  alcohol:   { ear:()=>0.29+(Math.random()-.5)*.02, mar:()=>0.38+(Math.random()-.5)*.04, perclos:()=>10+Math.random()*5, pose:()=>Math.sin(frame*.04)*4, mq3:()=>430+Math.random()*60 },
-  emergency: { ear:()=>Math.max(.08,.20-(frame%70)/70*.13), mar:()=>0.55+Math.random()*.1, perclos:()=>Math.min(72,frame*1.3), pose:()=>Math.min(20,frame*.32), mq3:()=>210+Math.random()*15 },
+  document.getElementById('startScreen').style.display='none';
+  initMediaPipe();
+};
+window.goBack=function(){
+  document.getElementById('blockedScreen').style.display='none';
+  document.getElementById('startScreen').style.display='flex';
+  alcoChoice='normal';
+  document.getElementById('btnNormal').className='choice ok';
+  document.getElementById('btnAlco').className='choice';
 };
 
-function setScenario(s) {
-  scenario = s; frame = 0; alertTimer = 0;
-  clearSerial();
-  serialLog(`[SIM] Scénario: ${s.toUpperCase()}`, 'sl-info');
-  if(s==='normal') {
-    setState('verif');
-    serialLog('[UART] {"mq3":205,"rfid":false,"btn":false,"mot":true}','sl-ok');
-    setTimeout(()=>{ setState('autorise'); serialLog('[CMD] CMD:AUTORISER → Démarrage autorisé','sl-cmd'); },1500);
-  } else if(s==='alcohol') {
-    setState('verif');
-    serialLog('[UART] {"mq3":455,"rfid":false,"btn":false,"mot":false}','sl-warn');
-    setTimeout(()=>{ setState('bloque'); serialLog('[CMD] CMD:BLOQUER → Moteurs OFF, LED rouge','sl-err'); },2000);
-  } else if(s==='drowsy') {
+/* ── MEDIAPIPE ── */
+async function initMediaPipe(){
+  log('Chargement modèle MediaPipe…','info');
+  try{
+    const fs=await FilesetResolver.forVisionTasks(
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm");
+    landmarker=await FaceLandmarker.createFromOptions(fs,{
+      baseOptions:{
+        modelAssetPath:"https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+        delegate:"GPU"},
+      runningMode:"VIDEO",numFaces:1,
+      minFaceDetectionConfidence:.5,minFacePresenceConfidence:.5,minTrackingConfidence:.5,
+      outputFaceBlendshapes:false,outputFacialTransformationMatrixes:false
+    });
+    log('Modèle IA chargé ✓','info');
+    await startWebcam();
+  }catch(e){ log('Erreur : '+e.message,'err'); }
+}
+
+async function startWebcam(){
+  log('Accès caméra…','info');
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({video:{width:{ideal:640},height:{ideal:480},facingMode:'user'},audio:false});
+    video.srcObject=stream;
+    video.addEventListener('loadeddata',()=>{
+      overlay.width=video.videoWidth||640;
+      overlay.height=video.videoHeight||480;
+      drawUtils=new DrawingUtils(ctx);
+      document.getElementById('initMsg').style.display='none';
+      document.getElementById('liveLabel').textContent='Webcam active';
+      log('Webcam connectée ✓','info');
+      setState('verif');
+      setTimeout(()=>{
+        setState('calibration');
+        document.getElementById('calibOverlay').classList.add('show');
+        document.getElementById('calibBadge').style.display='inline-block';
+        log('Calibration démarrée — restez immobile, yeux ouverts','info');
+        running=true;
+        requestAnimationFrame(loop);
+      },900);
+    });
+  }catch(e){ log('Webcam refusée : '+e.message,'err'); }
+}
+
+/* ── LOOP ── */
+function loop(){
+  if(!running) return;
+  requestAnimationFrame(loop);
+  if(video.readyState<2) return;
+  const now=performance.now();
+  if(video.currentTime===lastVideoTime) return;
+  lastVideoTime=video.currentTime; frameN++;
+
+  const res=landmarker.detectForVideo(video,now);
+  ctx.clearRect(0,0,overlay.width,overlay.height);
+
+  if(!res?.faceLandmarks?.length){
+    if(['autorise','alerte1','alerte2','alerte3'].includes(state)) drawNoFace();
+    if(state==='calibration'){
+      ctx.fillStyle='#f59e0b18'; ctx.fillRect(0,0,overlay.width,overlay.height);
+      ctx.fillStyle='#f59e0b'; ctx.font='12px Inter,sans-serif';
+      ctx.textAlign='center';
+      ctx.fillText('Aucun visage détecté — repositionnez-vous',overlay.width/2,overlay.height/2);
+      ctx.textAlign='left';
+    }
+    return;
+  }
+
+  const lm=res.faceLandmarks[0];
+  const W=overlay.width, H=overlay.height;
+  const ear=calcEAR(lm,W,H), mar=calcMAR(lm,W,H), headVal=calcHeadPitch(lm);
+
+  if(state==='calibration'){ doCalibration(ear,headVal,lm,W,H); return; }
+
+  /* ── MINIMAL FACE OVERLAY ──
+     On dessine seulement : contour yeux (très subtil) + lignes EAR (dashed)
+     Pas de tesselation, pas de sourcils, pas de lèvres — propre et discret */
+  ctx.save();
+  ctx.globalAlpha=0.45;
+  drawUtils.drawConnectors(lm,FaceLandmarker.FACE_LANDMARKS_RIGHT_EYE,{color:'#00d4ff',lineWidth:1.2});
+  drawUtils.drawConnectors(lm,FaceLandmarker.FACE_LANDMARKS_LEFT_EYE, {color:'#00d4ff',lineWidth:1.2});
+  ctx.globalAlpha=1; ctx.restore();
+
+  const eyeDown=ear<EAR_THR, headDown=headVal>HEAD_THR;
+  perclosBuffer.push(eyeDown?1:0);
+  if(perclosBuffer.length>PERCLOS_WIN) perclosBuffer.shift();
+  const perclos=perclosBuffer.reduce((a,b)=>a+b,0)/perclosBuffer.length*100;
+
+  const earBelow=ear<EAR_THR;
+  if(prevEarBelow&&!earBelow) blinkTimestamps.push(now);
+  prevEarBelow=earBelow;
+  blinkTimestamps=blinkTimestamps.filter(t=>now-t<60000);
+  blinkRate=blinkTimestamps.length;
+
+  const fatScore=Math.min(100,
+    (eyeDown?30:0)+(headDown?25:0)+
+    Math.min(20,perclos*.67)+
+    (blinkRate<BLINK_LOW&&blinkRate>0&&calibDone?Math.min(15,(BLINK_LOW-blinkRate)*1.5):0)+
+    (mar>MAR_THR?10:0));
+
+  /* EAR measurement lines — only these, very clean */
+  drawEarLines(lm,W,H,eyeDown);
+  drawHeadArrow(lm,W,H,headDown);
+  drawHUD(W,H,ear,headVal,perclos,fatScore,eyeDown,headDown);
+  updateMetrics(ear,headVal,perclos,mar,fatScore,eyeDown,headDown);
+
+  if(['autorise','alerte1','alerte2','alerte3'].includes(state))
+    processAlerts(eyeDown,headDown,mar,perclos,now);
+}
+
+/* ── CALIBRATION ── */
+function doCalibration(ear,headVal,lm,W,H){
+  calibData.push({ear,head:headVal});
+  const pct=Math.min(100,Math.round(calibData.length/CALIB_FRAMES*100));
+  document.getElementById('calibFill').style.width=pct+'%';
+  document.getElementById('calibPct').textContent=pct+' %';
+  const em=calibData.reduce((s,d)=>s+d.ear,0)/calibData.length;
+  const hm=calibData.reduce((s,d)=>s+d.head,0)/calibData.length;
+  document.getElementById('calibLive').innerHTML=
+    `EAR baseline : <b style="color:var(--cyan)">${em.toFixed(3)}</b><br>` +
+    `HEAD baseline : <b style="color:var(--purple)">${hm.toFixed(3)}</b>`;
+  /* draw minimal eyes during calib */
+  ctx.save(); ctx.globalAlpha=0.5;
+  drawUtils.drawConnectors(lm,FaceLandmarker.FACE_LANDMARKS_RIGHT_EYE,{color:'#00d4ff',lineWidth:1.2});
+  drawUtils.drawConnectors(lm,FaceLandmarker.FACE_LANDMARKS_LEFT_EYE, {color:'#00d4ff',lineWidth:1.2});
+  ctx.globalAlpha=1; ctx.restore();
+
+  if(calibData.length>=CALIB_FRAMES){
+    earBaseline=em; headBaseline=hm;
+    EAR_THR=Math.max(0.15,earBaseline*0.75);
+    HEAD_THR=Math.min(0.55,headBaseline+0.08);
+    calibDone=true;
+    document.getElementById('calibOverlay').classList.remove('show');
+    document.getElementById('calibBadge').style.display='none';
+    document.getElementById('calibWait').style.display='none';
+    document.getElementById('calibResult').style.display='flex';
+    document.getElementById('crEB').textContent=earBaseline.toFixed(3);
+    document.getElementById('crET').textContent=EAR_THR.toFixed(3);
+    document.getElementById('crHB').textContent=headBaseline.toFixed(3);
+    document.getElementById('crHT').textContent=HEAD_THR.toFixed(3);
+    log(`Calibration terminée — EAR seuil : ${EAR_THR.toFixed(3)} · HEAD seuil : ${HEAD_THR.toFixed(3)}`,'info');
     setState('autorise');
-    serialLog('[UART] {"mq3":200,"rfid":false,"btn":false,"mot":true}','sl-ok');
-    serialLog('[RPi] Surveillance somnolence active…','sl-info');
-  } else if(s==='emergency') {
-    setState('autorise');
-    serialLog('[WARN] PERCLOS en hausse — surveillance renforcée','sl-warn');
   }
 }
 
-function updateBar(id, val, thresh, max, fmt) {
-  const over = (id==='perclos-val'||id==='pose-val') ? val>thresh : val<thresh;
-  const pct = Math.min(100,(val/max)*100);
-  const col = over ? 'var(--red)' : (Math.abs(val-thresh)/thresh < .15 ? 'var(--yellow)' : 'var(--green)');
-  document.getElementById(id).textContent = fmt(val);
-  document.getElementById(id).style.color = col;
-  document.getElementById(id.replace('-val','-bar')).style.width = pct+'%';
-  document.getElementById(id.replace('-val','-bar')).style.background = col;
+/* ── MATH ── */
+function pt(lm,i,W,H){return{x:lm[i].x*W,y:lm[i].y*H}}
+function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
+function calcEAR(lm,W,H){
+  const e=idx=>{const p=idx.map(i=>pt(lm,i,W,H));return(dist(p[1],p[5])+dist(p[2],p[4]))/(2*dist(p[0],p[3]))};
+  return(e(L_EYE)+e(R_EYE))/2;
+}
+function calcMAR(lm,W,H){return dist(pt(lm,13,W,H),pt(lm,14,W,H))/dist(pt(lm,61,W,H),pt(lm,291,W,H))}
+function calcHeadPitch(lm){
+  const eyeMidY=(lm[33].y+lm[133].y+lm[362].y+lm[263].y)/4;
+  const faceH=lm[152].y-lm[10].y;
+  return faceH<0.01?0.5:(lm[4].y-eyeMidY)/faceH;
 }
 
-function simStep() {
-  frame++;
-  const sc = SC[scenario];
-  const ear=sc.ear(), mar=sc.mar(), perclos=sc.perclos(), pose=Math.abs(sc.pose()), mq3=sc.mq3();
-  updateBar('ear-val',     ear,     .261, .45,  v=>v.toFixed(3));
-  updateBar('mar-val',     mar,     .65,  1.2,  v=>v.toFixed(2));
-  updateBar('perclos-val', perclos, 35,   100,  v=>Math.round(v)+'%');
-  updateBar('pose-val',    pose,    20,   45,   v=>v.toFixed(0)+'°');
-  document.getElementById('mq3-val').textContent = Math.round(mq3);
-  document.getElementById('mq3-bar').style.width = Math.min(100,mq3/10)+'%';
-  document.getElementById('mq3-bar').style.background = mq3>400?'var(--red)':'var(--green)';
-  document.getElementById('mq3-val').style.color = mq3>400?'var(--red)':'var(--green)';
-  drawFace(ear, mar, sc.pose());
+/* ── DRAW HELPERS ── */
+function drawEarLines(lm,W,H,drowsy){
+  const col=drowsy?'#ef4444':'#00d4ff';
+  for(const idx of[L_EYE,R_EYE]){
+    const p=idx.map(i=>pt(lm,i,W,H));
+    ctx.save(); ctx.strokeStyle=col; ctx.lineWidth=1.2; ctx.globalAlpha=0.7;
+    ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(p[1].x,p[1].y); ctx.lineTo(p[5].x,p[5].y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(p[2].x,p[2].y); ctx.lineTo(p[4].x,p[4].y); ctx.stroke();
+    ctx.setLineDash([]); ctx.restore();
+  }
+}
+function drawHeadArrow(lm,W,H,down){
+  const n=pt(lm,4,W,H), col=down?'#ef4444':'#8b5cf6', len=20;
+  ctx.save(); ctx.strokeStyle=col; ctx.lineWidth=1.8; ctx.globalAlpha=0.8;
+  const ey=down?n.y+len:n.y-len, dir=down?-1:1;
+  ctx.beginPath(); ctx.moveTo(n.x,n.y); ctx.lineTo(n.x,ey); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(n.x,ey); ctx.lineTo(n.x-4,ey+dir*6); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(n.x,ey); ctx.lineTo(n.x+4,ey+dir*6); ctx.stroke();
+  ctx.restore();
+}
+function drawHUD(W,H,ear,headVal,perclos,fatScore,eyeDown,headDown){
+  /* Top-left data box — clean dark panel */
+  ctx.fillStyle='rgba(4,7,15,.88)';
+  roundRect(ctx,8,8,215,90,6); ctx.fill();
+  ctx.strokeStyle=eyeDown||headDown?'#ef444460':'#00d4ff30'; ctx.lineWidth=1;
+  roundRect(ctx,8,8,215,90,6); ctx.stroke();
 
-  if(scenario==='drowsy') {
-    const drowsy = ear<.261 && perclos>18;
-    if(drowsy && currentState==='autorise') {
-      setState('alerte1');
-      serialLog('[CMD] CMD:ALERTE:1 → Bip court, LED jaune','sl-warn');
-      serialLog(`[RPi] EAR=${ear.toFixed(3)} < 0.261 — 20 frames consécutives','sl-warn`,'sl-warn');
-    } else if(!drowsy && (currentState==='alerte1'||currentState==='alerte2')) {
-      setState('autorise');
-      serialLog('[CMD] CMD:AUTORISER — Conducteur réveillé ✓','sl-cmd');
+  ctx.font=`700 10px JetBrains Mono,monospace`;
+  const rows=[
+    [`EAR`,ear.toFixed(3),`seuil ${EAR_THR.toFixed(3)}`,eyeDown?'#ef4444':'#00c896'],
+    [`HEAD`,headVal.toFixed(3),`seuil ${HEAD_THR.toFixed(3)}`,headDown?'#ef4444':'#8b5cf6'],
+    [`PERCLOS`,perclos.toFixed(1)+'%',`seuil 30%`,perclos>30?'#ef4444':'#f59e0b'],
+    [`BLINK`,blinkRate+'/min',`seuil 10`,blinkRate<BLINK_LOW&&blinkRate>0?'#ef4444':'#0ea5e9'],
+    [`FATIGUE`,fatScore.toFixed(0)+'/100','',fatScore>60?'#ef4444':fatScore>30?'#f59e0b':'#00c896'],
+  ];
+  rows.forEach(([label,val,hint,col],i)=>{
+    const y=25+i*14;
+    ctx.fillStyle='#475569'; ctx.fillText(label.padEnd(8),14,y);
+    ctx.fillStyle=col; ctx.fillText(val.padEnd(9),66,y);
+    ctx.fillStyle='#2a3a5a'; ctx.font='8px JetBrains Mono,monospace'; ctx.fillText(hint,130,y);
+    ctx.font='700 10px JetBrains Mono,monospace';
+  });
+
+  /* State badge — bottom right */
+  const SC={init:'#475569',verif:'#0ea5e9',calibration:'#00d4ff',autorise:'#00c896',
+    alerte1:'#f59e0b',alerte2:'#f97316',alerte3:'#ef4444',parking:'#8b5cf6'};
+  const SL={init:'INIT',verif:'VÉRIF',calibration:'CALIB',autorise:'NORMAL',
+    alerte1:'ALERTE 1',alerte2:'ALERTE 2',alerte3:'ALERTE 3',parking:'PARKING'};
+  const sc=SC[state]||'#475569', sl=SL[state]||state.toUpperCase();
+  ctx.font='700 10px JetBrains Mono,monospace';
+  const tw=ctx.measureText(sl).width+18;
+  ctx.fillStyle='rgba(4,7,15,.9)';
+  roundRect(ctx,W-tw-6,H-24,tw,18,5); ctx.fill();
+  ctx.strokeStyle=sc; roundRect(ctx,W-tw-6,H-24,tw,18,5); ctx.stroke();
+  ctx.fillStyle=sc; ctx.fillText(sl,W-tw+1,H-11);
+
+  /* Frame / time */
+  ctx.fillStyle='#1e2d4a'; ctx.font='8px JetBrains Mono,monospace';
+  ctx.fillText(`F:${frameN}  ${new Date().toLocaleTimeString()}`,8,H-6);
+}
+function roundRect(c,x,y,w,h,r){
+  c.beginPath(); c.roundRect(x,y,w,h,r);
+}
+function drawNoFace(){
+  ctx.strokeStyle='#f59e0b'; ctx.lineWidth=1.5; ctx.setLineDash([6,4]);
+  ctx.strokeRect(8,8,overlay.width-16,overlay.height-16);
+  ctx.setLineDash([]);
+  ctx.fillStyle='#f59e0b'; ctx.font='12px Inter,sans-serif'; ctx.textAlign='center';
+  ctx.fillText('⚠ Visage non détecté',overlay.width/2,overlay.height/2);
+  ctx.textAlign='left';
+}
+
+/* ── METRICS UI ── */
+function bar(id,pct,col){const e=document.getElementById(id);e.style.width=Math.min(100,Math.max(0,pct))+'%';e.style.background=col}
+function updateMetrics(ear,headVal,perclos,mar,fatScore,eyeDown,headDown){
+  const percCrit=perclos>PERCLOS_ALERT;
+  const blinkBad=blinkRate<BLINK_LOW&&blinkRate>0&&calibDone;
+
+  setMv('mEAR',ear.toFixed(3),eyeDown?'var(--red)':'var(--green)');
+  bar('bEAR',ear/0.45*100,eyeDown?'var(--red)':'var(--green)');
+  setMv('mHEAD',headVal.toFixed(3),headDown?'var(--red)':'var(--purple)');
+  bar('bHEAD',headVal/0.5*100,headDown?'var(--red)':'var(--purple)');
+  setMv('mPERC',perclos.toFixed(0)+'%',percCrit?'var(--red)':perclos>15?'var(--yellow)':'var(--green)');
+  bar('bPERC',Math.min(100,perclos*2),percCrit?'var(--red)':'var(--yellow)');
+  setMv('mBLINK',String(blinkRate),blinkBad?'var(--red)':'var(--cyan)');
+  bar('bBLINK',Math.min(100,blinkRate/20*100),blinkBad?'var(--red)':'var(--cyan)');
+  setMv('mFAT',fatScore.toFixed(0),fatScore>60?'var(--red)':fatScore>30?'var(--yellow)':'var(--green)');
+  bar('bFAT',fatScore,fatScore>60?'var(--red)':fatScore>30?'var(--yellow)':'var(--green)');
+
+  setSig('sigEye','sEarV','sEarT',ear.toFixed(3),eyeDown,'⚠ Fermés','Ouverts');
+  setSig('sigHead','sHeadV','sHeadT',headVal.toFixed(3),headDown,'⚠ Trop bas','Position droite');
+  setSig('sigPerc','sPercV','sPercT',perclos.toFixed(0)+'%',percCrit,'⚠ Critique','Normal');
+  setSig('sigBlink','sBlinkV','sBlinkT',blinkRate+'/min',blinkBad,'⚠ Trop faible','Normal');
+
+  document.getElementById('cFat').textContent=fatigueFrames;
+  document.getElementById('cRecov').textContent=recovCount;
+  document.getElementById('cYawn').textContent=yawnCount;
+  document.getElementById('cPark').textContent=parkCount;
+}
+function setMv(id,val,col){const e=document.getElementById(id);e.textContent=val;e.style.color=col}
+function setSig(boxId,valId,tagId,val,bad,badLabel,okLabel){
+  document.getElementById(valId).textContent=val;
+  const t=document.getElementById(tagId);
+  t.textContent=bad?badLabel:okLabel; t.style.color=bad?'var(--red)':'var(--green)';
+  document.getElementById(boxId).className='sig '+(bad?'bad':'ok');
+}
+
+/* ── ALERTS ── */
+function processAlerts(eyeDown,headDown,mar,perclos,now){
+  if(mar>MAR_THR&&!inYawn){inYawn=true;yawnCount++;log(`Bâillement (MAR=${mar.toFixed(2)})`,'warn')}
+  if(mar<=MAR_THR) inYawn=false;
+  const fatigued=eyeDown||headDown, percCrit=perclos>PERCLOS_ALERT;
+  const blinkBad=blinkRate<BLINK_LOW&&blinkRate>0&&calibDone;
+
+  if(state==='autorise'){
+    if(percCrit&&!fatigued){log(`PERCLOS ${perclos.toFixed(1)}% — micro-endormissements → Alerte 1`,'warn');setState('alerte1');alerte1Start=now;fatigueFrames=0;return}
+    if(blinkBad&&!fatigued){log(`Blink ${blinkRate}/min — somnolence → Alerte 1`,'warn');setState('alerte1');alerte1Start=now;fatigueFrames=0;return}
+    if(fatigued){
+      fatigueFrames++;
+      document.getElementById('aF1').style.width=Math.min(100,fatigueFrames/FAT_FRAMES*100)+'%';
+      if(fatigueFrames>=FAT_FRAMES){
+        const t=[eyeDown?'yeux fermés':'',headDown?'tête inclinée':''].filter(Boolean).join(' + ');
+        log(`Alerte 1 — ${t} (${fatigueFrames} frames)`,'warn');
+        setState('alerte1');alerte1Start=now;fatigueFrames=0;
+      }
+    } else {
+      fatigueFrames=Math.max(0,fatigueFrames-1);
+      document.getElementById('aF1').style.width=(fatigueFrames/FAT_FRAMES*100)+'%';
+    }
+    return;
+  }
+  if(state==='alerte1'){
+    if(!fatigued&&!percCrit){recovCount++;log('Récupération → Normal','info');setState('autorise');fatigueFrames=0;document.getElementById('aF1').style.width='0%';document.getElementById('aF2').style.width='0%';return}
+    const el=now-alerte1Start;
+    document.getElementById('aF2').style.width=Math.min(100,el/ALERTE2_MS*100)+'%';
+    if(el>ALERTE2_MS){log('Pas de récupération → Alerte 2','err');setState('alerte2');alerte2Start=now}
+    return;
+  }
+  if(state==='alerte2'){
+    const el=now-alerte2Start;
+    document.getElementById('aF3').style.width=Math.min(100,el/ALERTE3_MS*100)+'%';
+    if(el>ALERTE3_MS){log('Seuil critique → Alerte 3 + pilotage autonome','err');setState('alerte3');triggerParking()}
+    return;
+  }
+}
+
+/* ── STATE UI ── */
+const SI={
+  init:       {icon:'⏳',name:'Initialisation',    desc:'Chargement du modèle IA…',             col:'var(--text2)'},
+  verif:      {icon:'🔍',name:'Vérification',       desc:'Détection du visage…',                  col:'#0ea5e9'},
+  calibration:{icon:'🎯',name:'Calibration',        desc:'Mesure de vos valeurs personnelles…',  col:'var(--cyan)'},
+  autorise:   {icon:'✅',name:'Conduite normale',   desc:'Conducteur attentif — seuils actifs',  col:'var(--green)'},
+  alerte1:    {icon:'😴',name:'Alerte 1',            desc:'⚠ Fatigue détectée — Réveillez-vous !',col:'var(--yellow)'},
+  alerte2:    {icon:'⚠️',name:'Alerte 2',            desc:'🚨 Danger — Ralentissement automatique',col:'var(--orange)'},
+  alerte3:    {icon:'🚨',name:'Alerte 3',            desc:'⛔ Pilotage autonome engagé',           col:'var(--red)'},
+  parking:    {icon:'🅿️',name:'Parking autonome',  desc:'🤖 Stationnement RFID en cours…',       col:'var(--purple)'}
+};
+const sfMap={init:0,verif:1,calibration:2,autorise:3,alerte1:4,alerte2:5,alerte3:6,parking:7};
+function setState(s){
+  if(state===s) return; const prev=state; state=s;
+  const info=SI[s];
+  document.getElementById('stateIcon').textContent=info.icon;
+  document.getElementById('stateName').textContent=info.name;
+  document.getElementById('stateName').style.color=info.col;
+  document.getElementById('stateDesc').textContent=info.desc;
+  const si=sfMap[s]??0;
+  ['sf0','sf1','sf2','sf3','sf4','sf5','sf6','sf7'].forEach((id,i)=>{
+    document.getElementById(id).className='fstep'+(i===si?' on':i<si?' done':'');
+  });
+  document.getElementById('aBox1').className='al'+(s==='alerte1'?' a1':'');
+  document.getElementById('aBox2').className='al'+(s==='alerte2'?' a2':'');
+  document.getElementById('aBox3').className='al'+((s==='alerte3'||s==='parking')?' a3':'');
+  log(`${prev} → ${s}`,'info');
+}
+
+/* ── PARKING + RFID ── */
+const PC=document.getElementById('parkingCanvas');
+const PX=PC.getContext('2d');
+const PW=Math.max(PC.parentElement.clientWidth-26,250), PH=128;
+PC.width=PW; PC.height=PH;
+const PAD=8,A1Y=Math.round(PH*.28),A2Y=Math.round(PH*.72),CX=PAD+12;
+const SX=[54,103,152,201,250,299].map(x=>Math.round(x*PW/365));
+const SW=29,SH=18,RY=[A1Y-SH-4,A1Y+5,A2Y-SH-4,A2Y+5];
+let spots=Array.from({length:24},(_,i)=>({
+  x:SX[i%6],y:RY[Math.floor(i/6)],occ:false,res:false,row:Math.floor(i/6),col:i%6,
+  rfid:`0x${Math.floor(Math.random()*0xFFFFFF).toString(16).toUpperCase().padStart(6,'0')}`
+}));
+let mCar={visible:false,x:0,y:0,wp:[],wpi:0,sp:null,speed:2.0};
+let parkDone=false, rfidFound=false;
+
+function triggerParking(){
+  if(parkLoopRunning) return;
+  setState('parking'); parkCount++;
+  parkDone=false; rfidFound=false; parkLoopRunning=true;
+  document.getElementById('resetBtn').classList.remove('show');
+  log('Pilotage autonome engagé…','info');
+  log('Scan RFID places de parking…','rfid');
+  const free=spots.filter(s=>!s.occ&&!s.res);
+  if(!free.length) spots.forEach(s=>{s.occ=false;s.res=false;});
+  const avail=spots.filter(s=>!s.occ&&!s.res);
+  const sp=avail[Math.floor(Math.random()*avail.length)]; sp.res=true;
+  setTimeout(()=>{
+    rfidFound=true;
+    log(`RFID: ${sp.rfid} — Place R${sp.row+1}C${sp.col+1} libre ✓`,'rfid');
+    log(`Navigation → Place R${sp.row+1}C${sp.col+1}`,'info');
+    const eX=PW+20;
+    let wp=[{x:eX,y:A1Y}];
+    if(sp.row<2) wp.push({x:sp.x,y:A1Y},{x:sp.x,y:sp.y+SH/2});
+    else wp.push({x:CX,y:A1Y},{x:CX,y:A2Y},{x:sp.x,y:A2Y},{x:sp.x,y:sp.y+SH/2});
+    mCar={visible:true,x:eX,y:A1Y,wp,wpi:0,sp,speed:2.0};
+    requestAnimationFrame(parkLoop);
+  },1100);
+  drawParking();
+}
+function parkLoop(){ drawParking(); if(!parkDone) requestAnimationFrame(parkLoop); else parkLoopRunning=false; }
+function drawParking(){
+  PX.clearRect(0,0,PW,PH);
+  PX.fillStyle='#04070f'; PX.fillRect(0,0,PW,PH);
+  PX.fillStyle='#0d1220';
+  PX.fillRect(PAD,A1Y-9,PW-PAD*2,18); PX.fillRect(PAD,A2Y-9,PW-PAD*2,18);
+  PX.strokeStyle='#1a2540'; PX.lineWidth=1; PX.setLineDash([6,6]);
+  PX.beginPath(); PX.moveTo(PAD,A1Y); PX.lineTo(PW-PAD,A1Y); PX.stroke();
+  PX.beginPath(); PX.moveTo(PAD,A2Y); PX.lineTo(PW-PAD,A2Y); PX.stroke();
+  PX.setLineDash([]);
+  PX.strokeStyle='#0e1528'; PX.lineWidth=9;
+  PX.beginPath(); PX.moveTo(CX,A1Y); PX.lineTo(CX,A2Y); PX.stroke();
+  PX.fillStyle='#00c89630'; PX.font='7.5px Inter,sans-serif';
+  PX.fillText('ENTRÉE ▶',PW-55,A1Y-12);
+  PX.fillStyle='#ef444430'; PX.fillText('SORTIE ◀',PW-55,A2Y+16);
+  if(!rfidFound&&parkLoopRunning){
+    const r=(Date.now()%900)/900*Math.min(PW,PH)*.38;
+    PX.strokeStyle='#8b5cf630'; PX.lineWidth=1;
+    PX.beginPath(); PX.arc(PW/2,PH/2,r,0,Math.PI*2); PX.stroke();
+    PX.fillStyle='#8b5cf6'; PX.font='8px Inter,sans-serif'; PX.textAlign='center';
+    PX.fillText('RFID scan…',PW/2,PH/2+3); PX.textAlign='left';
+  }
+  spots.forEach(s=>{
+    PX.fillStyle=s.occ?'#ef444430':s.res?'#f59e0b30':'#0e1a10';
+    PX.strokeStyle=s.occ?'#ef444470':s.res?'#f59e0b70':'#1a2540';
+    PX.lineWidth=1;
+    PX.beginPath(); PX.roundRect(s.x-SW/2,s.y,SW,SH,2); PX.fill(); PX.stroke();
+  });
+  if(mCar.visible){
+    const t=mCar.wp[mCar.wpi];
+    if(t){
+      const dx=t.x-mCar.x,dy=t.y-mCar.y,d=Math.hypot(dx,dy);
+      if(d<mCar.speed+1){mCar.x=t.x;mCar.y=t.y;mCar.wpi++;
+        if(mCar.wpi>=mCar.wp.length){mCar.sp.occ=true;mCar.sp.res=false;mCar.visible=false;log(`Garé — RFID ${mCar.sp.rfid} OCCUPÉ`,'info');onParkDone();}
+      } else {mCar.x+=dx/d*mCar.speed;mCar.y+=dy/d*mCar.speed;}
+    }
+    if(mCar.visible){
+      PX.fillStyle='#ef4444'; PX.strokeStyle='#ef444440'; PX.lineWidth=1;
+      PX.beginPath(); PX.roundRect(mCar.x-8,mCar.y-5,16,10,3); PX.fill(); PX.stroke();
+      PX.fillStyle='#fef08a'; PX.fillRect(mCar.x+6,mCar.y-3,2,2); PX.fillRect(mCar.x+6,mCar.y+2,2,2);
     }
   }
-  if(scenario==='emergency') {
-    alertTimer++;
-    if(alertTimer===50) { setState('alerte1'); serialLog('[CMD] CMD:ALERTE:1 — EAR<0.261, 20 frames','sl-warn'); }
-    if(alertTimer===110){ setState('alerte2'); serialLog('[CMD] CMD:ALERTE:2 — 5s sans réaction','sl-err'); }
-    if(alertTimer===170){ setState('alerte3'); serialLog('[CMD] CMD:ALERTE:3 — URGENCE SIRÈNE 🚨','sl-err'); }
-    if(alertTimer===230){ setState('parking'); serialLog('[CMD] CMD:PARKING — Suivi ligne TCRT5000','sl-cmd'); }
-    if(alertTimer===280){ serialLog('[UART] {"mq3":208,"rfid":true} — RFID détecté! Arrêt zone parking','sl-ok'); serialLog('[CMD] CMD:RESET','sl-cmd'); alertTimer=0; setTimeout(()=>setScenario('normal'),2000); }
-  }
-  if(frame%40===0 && scenario==='normal') serialLog(`[UART] {"mq3":${Math.round(mq3)},"rfid":false,"btn":false,"mot":true}`,'sl-ok');
-  if(frame%85===0 && scenario==='normal') serialLog(`[RPi] EAR=${ear.toFixed(3)} MAR=${mar.toFixed(2)} PERCLOS=${perclos.toFixed(0)}% → Niveau 0`,'sl-info');
+  const occ=spots.filter(s=>s.occ).length;
+  PX.fillStyle='#00c89650'; PX.font='7.5px Inter,sans-serif';
+  PX.fillText(`Occupées : ${occ}/24   Libres : ${24-occ}`,PAD,PH-4);
+}
+function onParkDone(){
+  parkDone=true;
+  document.getElementById('resetBtn').classList.add('show');
+  log('Stationnement autonome réussi ✓','info');
+  drawParking();
 }
 
-// Init
-serialLog('[INIT] Raspberry Pi — Sécurité active démarrée','sl-ok');
-serialLog('[INIT] MediaPipe Face Mesh chargé — face_landmarker.task (~5 Mo)','sl-ok');
-serialLog('[INIT] Calibration EAR — 30 frames…','sl-info');
-setTimeout(()=>serialLog('[INIT] Calibration OK — seuil adaptatif: 0.261','sl-ok'),700);
-setTimeout(()=>serialLog('[UART] Connexion Arduino Mega 2560 — /dev/ttyAMA0 9600 baud','sl-ok'),1300);
-setTimeout(()=>{ setState('verif'); serialLog('[VERIF] Lecture MQ-3…','sl-info'); },1800);
-setTimeout(()=>{ setState('autorise'); serialLog('[CMD] CMD:AUTORISER → Moteurs ON, LED verte','sl-cmd'); },2400);
-setInterval(simStep, 80);
+/* ── RESET ── */
+window.resetSystem=function(){
+  fatigueFrames=0;recovCount=0;inYawn=false;perclosBuffer=[];
+  blinkTimestamps=[];prevEarBelow=false;blinkRate=0;
+  mCar.visible=false;parkDone=false;rfidFound=false;
+  ['aF1','aF2','aF3'].forEach(id=>document.getElementById(id).style.width='0%');
+  ['aBox1','aBox2','aBox3'].forEach(id=>document.getElementById(id).className='al');
+  document.getElementById('resetBtn').classList.remove('show');
+  setState('autorise');
+  log('Session réinitialisée ✓','info');
+  drawParking();
+};
+
+/* ── LOG ── */
+function log(msg,type='info'){
+  const box=document.getElementById('logBox');
+  const ts=new Date().toLocaleTimeString('fr-FR',{hour12:false});
+  const div=document.createElement('div');div.className='le';
+  const cls={info:'linfo',warn:'lwarn',err:'lerr',rfid:'lrfid',calib:'lcal'}[type]||'linfo';
+  div.innerHTML=`<span class="lts">${ts}</span><span class="${cls}">${msg}</span>`;
+  box.appendChild(div); box.scrollTop=box.scrollHeight;
+  while(box.children.length>80) box.removeChild(box.firstChild);
+}
+
+/* ── BOOT ── */
+drawParking();
 </script>
 </body>
 </html>

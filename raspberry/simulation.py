@@ -212,7 +212,7 @@ class SimulationDetecteur:
             self._fenetre.pop(0)
         perclos = sum(self._fenetre) / len(self._fenetre)
 
-        signal = yeux_fermes or perclos >= 0.35
+        signal = yeux_fermes or perclos >= 0.30   # 30% — synchronisé avec demo.html
 
         if not signal:
             self._compteur = 0
@@ -246,18 +246,27 @@ class SimulationDetecteur:
 
         self._maj_niveau(yeux_fermes)
 
+        # Simulation blink rate (basé sur EAR simulé)
+        sim_blink = 15 if ear_val >= self.ear_seuil else 4
+        perclos_val = round(sum(self._fenetre) / max(1, len(self._fenetre)), 2)
+        head_pitch_sim = round(abs(random.gauss(0.30, 0.02)), 3)
+
         result = {
             "niveau":         self.niveau,
             "ear":            round(ear_val, 3),
             "mar":            round(mar_val, 3),
-            "perclos":        round(sum(self._fenetre)/max(1,len(self._fenetre)), 2),
+            "perclos":        perclos_val,
+            "head_pitch":     head_pitch_sim,
             "roulis":         round(roulis, 1),
             "tangage":        round(tangage, 1),
+            "blink_rate":     sim_blink,           # Ajout — synchro demo.html
             "baillement":     mar_val > 0.65,
             "tete_inclinee":  roulis > 20,
+            "fatigue_score":  0.0,                 # Calculé par main.py si besoin
             "visage_detecte": True,
             "frame":          None,
             "ear_seuil":      self.ear_seuil,
+            "head_seuil":     0.310,
             "calibre":        self._calibre,
         }
 

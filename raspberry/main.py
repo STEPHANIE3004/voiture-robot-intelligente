@@ -168,7 +168,7 @@ class VoitureSecurisee:
             logger.info("Conducteur réveillé → retour normal")
             self.serial.envoyer("CMD:AUTORISER")
             self._goto(Etat.AUTORISE)
-        elif self._duree() >= 5.0:
+        elif self._duree() >= 3.0:   # 3 s — synchronisé avec demo.html ALERTE3_MS=3000
             logger.critical("URGENCE — parking autonome activé")
             self.serial.envoyer("CMD:ALERTE:3")
             time.sleep(1)

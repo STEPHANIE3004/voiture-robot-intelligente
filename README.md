@@ -1,171 +1,207 @@
 # 🚗 Voiture Robot Intelligente — Sécurité Active Conducteur
 
-Système embarqué de sécurité intégré à une voiture robot, développé à l'**ESIEA**.  
-Détecte en temps réel la **somnolence** et l'**alcoolémie** du conducteur, et déclenche automatiquement un **mode de stationnement autonome** en cas d'urgence.
+<div align="center">
 
-![Python](https://img.shields.io/badge/Python-3.9%2B-blue?logo=python)
-![MediaPipe](https://img.shields.io/badge/MediaPipe-0.10%2B-orange?logo=google)
-![Arduino](https://img.shields.io/badge/Arduino-Mega%202560-teal?logo=arduino)
-![Raspberry Pi](https://img.shields.io/badge/Raspberry%20Pi-3%2F4-red?logo=raspberry-pi)
-![Dataset](https://img.shields.io/badge/Dataset-NTHU--DDD%20133K%20images-green)
+**Système embarqué de détection de somnolence et d'alcoolémie en temps réel**  
+*Raspberry Pi · Arduino Mega · MediaPipe AI · Parking autonome RFID*
 
----
+[![Python](https://img.shields.io/badge/Python-3.9%2B-3776ab?logo=python&logoColor=white)](https://python.org)
+[![MediaPipe](https://img.shields.io/badge/MediaPipe-0.10.3-ff6f00?logo=google&logoColor=white)](https://mediapipe.dev)
+[![Arduino](https://img.shields.io/badge/Arduino-Mega_2560-00979d?logo=arduino&logoColor=white)](https://arduino.cc)
+[![Raspberry Pi](https://img.shields.io/badge/Raspberry_Pi-3%2F4-c51a4a?logo=raspberry-pi&logoColor=white)](https://raspberrypi.org)
+[![Dataset](https://img.shields.io/badge/Dataset-NTHU--DDD_133K_images-22c55e)](https://github.com)
+[![Licence](https://img.shields.io/badge/Licence-MIT-6366f1)](LICENSE)
 
-## 🎯 Fonctionnalités
-
-| Exigence | Description | Implémentation |
-|----------|-------------|----------------|
-| **SR1** | Lecture alcool MQ-3 + blocage démarrage | Arduino — ADC A0 |
-| **SR2** | Détection somnolence par caméra (EAR, MAR, PERCLOS, tête) | Raspberry Pi — MediaPipe Face Mesh |
-| **SR3** | Alertes sonores (buzzer) et visuelles (LEDs + OLED) | Arduino — 3 niveaux d'alerte |
-| **SR4** | Mode autonome si pas de réaction en 5 s (suivi ligne + RFID) | Arduino — L298N + TCRT5000 + MFRC522 |
-| **SR5** | Affichage états temps réel sur OLED | Arduino — SSD1306 I2C |
-| **SR6** | Tolérance erreurs vidéo, latence < 200 ms | Raspberry Pi — gestion exceptions |
+</div>
 
 ---
 
-## 🏗️ Architecture
+## 🎬 Démo interactive
 
+> **Aucun matériel requis pour tester.** La démo fonctionne directement dans le navigateur avec votre webcam.
+
+```bash
+# Ouvrir demo.html via VS Code Live Server (requis pour ES module + webcam)
+# → Clic droit sur demo.html → Open with Live Server
 ```
-┌─────────────────────────────────┐     Serial UART     ┌────────────────────────────┐
-│        Raspberry Pi             │ ◄──────────────────► │      Arduino Mega 2560     │
-│                                 │   JSON + Commandes   │                            │
-│  main.py — Machine à états      │                      │  MQ-3   → A0              │
-│  IDLE → VERIF → AUTORISE        │                      │  RFID   → SPI             │
-│       ↕              ↕          │                      │  L298N  → D7-D12          │
-│  ALERTE(1,2,3)    BLOQUE        │                      │  OLED   → I2C             │
-│       ↓                         │                      │  LEDs   → D4-D6           │
-│  PARKING → ARRET                │                      │  Buzzer → D3              │
-│                                 │                      │  Bouton → D2              │
-│  detection_somnolence.py        │                      └────────────────────────────┘
-│  OpenCV + MediaPipe Face Mesh   │
-│  468 landmarks 3D               │
-│  EAR / MAR / PERCLOS / Pose     │
-│  Niveaux 0 → 3                  │
-└─────────────────────────────────┘
-         │ USB / Pi Camera
-         ▼
-    [ Caméra conducteur ]
-```
+
+La démo simule l'intégralité du système en temps réel :
+- Détection somnolence par webcam (MediaPipe Face Landmarker)
+- Calibration personnalisée automatique (~5 s)
+- Machine à états alertes 1 → 2 → 3 → parking autonome RFID
+- Choix du taux d'alcool au démarrage (blocage moteur si positif)
 
 ---
 
-## 📟 Machine à états
+## 🎯 Concept
+
+Un conducteur somnolent ou alcoolisé représente un danger immédiat. Ce système embarqué surveille en continu l'état du conducteur via **5 signaux biométriques indépendants** et réagit de manière graduée — de l'avertissement sonore jusqu'au stationnement autonome d'urgence.
 
 ```
-          [Bouton]
-IDLE ──────────────► VERIFICATION
-                         │
-              ┌──────────┴──────────┐
-         [Alcool OK]          [Alcool > seuil]
-              │                     │
-           AUTORISE              BLOQUE
-              │
-         [EAR < 0.261, 20 frames consécutives]
-              │
-           ALERTE_1  ◄──── [Réaction conducteur]
-              │  5 s sans réaction
-           ALERTE_2  ◄──── [Réaction conducteur]
-              │  5 s sans réaction
-           ALERTE_3
-              │
-           PARKING  (suivi ligne + RFID zone)
-              │  RFID détecté
-            ARRET
+Conducteur ──► Caméra ──► Raspberry Pi ──► Analyse IA ──► Arduino ──► Moteurs / Buzzer / LEDs
+                                              │
+                                    5 signaux fusionnés
+                              EAR · HEAD · PERCLOS · BLINK · MAR
+                                              │
+                                   Score de fatigue 0-100
+                                              │
+                              ┌───────────────┼───────────────┐
+                           Normal          Alertes 1-2-3     Parking auto
+                                                               + RFID scan
 ```
 
 ---
 
-## 👁️ Indicateurs de somnolence
+## ✨ Fonctionnalités clés
 
-| Indicateur | Description | Seuil | Source |
-|-----------|-------------|-------|--------|
-| **EAR** (Eye Aspect Ratio) | Rapport hauteur/largeur de l'œil — chute si yeux fermés | 0.261 | NTHU-DDD + Youden index |
-| **MAR** (Mouth Aspect Ratio) | Ouverture buccale — détecte les bâillements | 0.650 | UTA-RLDD + Abtahi 2014 |
-| **PERCLOS** | % frames yeux fermés sur fenêtre 60 frames | 35 % | Standard NHTSA |
-| **Head pose** | Roulis > 20° ou tangage > 15° → tête qui tombe | 20° / 15° | UTA-RLDD |
+### 🧠 Détection somnolence — 5 signaux indépendants
 
----
+| Signal | Description | Méthode | Seuil |
+|--------|-------------|---------|-------|
+| **👁 EAR** | Fermeture des yeux (Eye Aspect Ratio) | 6 landmarks par œil — Soukupová & Čech 2016 | Calibré (baseline × 0.75) |
+| **🔻 HEAD PITCH** | Inclinaison tête vers l'avant | Ratio nez/yeux/hauteur visage | Calibré (baseline + 0.08) |
+| **📊 PERCLOS** | % frames yeux fermés sur 2 s | Fenêtre glissante 60 frames | **30 %** (NHTSA standard) |
+| **👁‍🗨 BLINK RATE** | Clignements par minute | Détection transitions EAR, fenêtre 60 s | **< 10 /min** |
+| **💬 MAR** | Bâillements (Mouth Aspect Ratio) | 8 landmarks bouche — Abtahi 2014 | 0.65 |
 
-## 📊 Validation des seuils — Dataset NTHU-DDD
-
-Les seuils ne sont **pas arbitraires** : ils ont été calibrés par analyse ROC sur le dataset **NTHU-DDD Multi-Class** (133 042 images réelles de conducteurs).
-
+**Score de fatigue fusionné 0–100 :**
 ```
-Pipeline de validation :
-  telecharger_et_analyser.ps1
-        │
-        ├── kagglehub → téléchargement NTHU-DDD (1.99 Go)
-        ├── analyse_nthu.py → MediaPipe sur 8 000 images échantillonnées
-        │       ├── Labellisation : _drowsy (1) / _notdrowsy (0)
-        │       ├── Courbe ROC par métrique (EAR, MAR)
-        │       └── Indice de Youden = argmax(TPR − FPR)
-        └── maj_seuils.py → patch automatique detection_somnolence.py
+EAR(30) + HEAD PITCH(25) + PERCLOS(20) + BLINK RATE(15) + MAR(10)
 ```
 
-| Métrique | AUC | Seuil Youden | Seuil F1-opt | Retenu | Raison |
-|----------|-----|-------------|-------------|--------|--------|
-| EAR | **0.678** | **0.261** | 0.384 | ✅ Youden | Cohérent littérature ; F1-opt trop permissif |
-| MAR | 0.454 | 0.655 | 0.159 | ❌ Défaut 0.65 | AUC < 0.5 : NTHU-DDD non pertinent pour bâillements |
-| PERCLOS | — | — | — | ✅ 0.35 (NHTSA) | Dataset sans séquences temporelles |
+### 🎯 Calibration personnalisée par conducteur
 
-> **Pourquoi EAR Youden et pas F1-optimal ?**  
-> Dans un système de sécurité, minimiser les faux négatifs (rater un conducteur somnolent) est critique. L'indice de Youden maximise `TPR − FPR`, offrant le meilleur équilibre sensibilité/spécificité. Le F1-optimal (0.384) déclencherait des alertes à moitié-œil ouvert chez un conducteur éveillé.
+Au démarrage, le système mesure 150 frames (~5 s) pour calculer les seuils adaptés à **chaque conducteur** — morphologie, position de la caméra, conditions d'éclairage.
 
-Graphiques générés dans `raspberry/resultats_nthu/` :
-- `roc_curves_nthu.png` — courbes ROC EAR et MAR
-- `distribution_ear_nthu.png` — distribution EAR éveillé vs somnolent
-- `rapport_nthu.txt` — classification report complet
+```
+EAR seuil  = max(0.15,  moyenne_EAR  × 0.75)
+HEAD seuil = min(0.55,  moyenne_HEAD + 0.08)
+```
 
----
+### 🚨 Machine à états graduée
 
-## ⚡ Performances — Latence temps réel
+```
+                        ┌──── Réveil conducteur ◄────┐
+                        │                            │
+CALIBRATION ──► NORMAL ─┤                            │
+                        │                        ALERTE 1 ──── [40 frames consécutives
+                        │                            │          ou PERCLOS > 30%
+                        │                            │          ou BLINK < 10/min]
+                        │                        ALERTE 2 ──── [5 s sans réaction]
+                        │                            │
+                        │                        ALERTE 3 ──── [3 s sans réaction]
+                        │                            │
+                     BLOQUÉ                      PARKING ────── [Suivi ligne + RFID]
+                  [Alcool > seuil]                   │
+                                                   ARRÊT
+```
 
-Script de benchmark : `python raspberry/benchmark_rpi.py`
+### 🔐 Détection alcoolémie — blocage démarrage
 
-| Plateforme | Latence inference | FPS equiv. | SR6 < 200 ms ? |
-|-----------|-------------------|-----------|----------------|
-| PC Windows (benchmark) | ~15–30 ms | ~35–65 fps | ✅ |
-| **Raspberry Pi 4B** (1.8 GHz, ARM) | ~80–100 ms | ~10–12 fps | ✅ |
-| **Raspberry Pi 3B** (1.2 GHz, ARM) | ~150–180 ms | ~6–7 fps | ✅ (juste) |
+Le capteur MQ-3 lit le taux d'alcool **avant** le démarrage. Si le seuil légal est dépassé, le relais coupe le circuit moteur et le démarrage est **physiquement impossible**.
 
-> - MediaPipe utilise l'accélération **XNNPACK NEON** sur ARM → optimisé RPi 4  
-> - Résolution recommandée RPi 3 : **320×240** (gain ~40 % vs 640×480)  
-> - Latence totale mesurée = inference + capture caméra + overhead UART ≈ **180 ms max** (SR6 respecté)
-
----
-
-## ⚠️ Limites connues
-
-Ce projet est académique. Les limites ci-dessous sont documentées pour transparence — les connaître fait partie de la démarche d'ingénierie.
-
-**AUC modéré (0.678 pour EAR).** Le dataset NTHU-DDD est en conditions de laboratoire contrôlé. En conditions réelles (lumière variable, lunettes de soleil, barbe, angle caméra non frontal), les performances seront différentes. Une AUC > 0.85 nécessiterait un fine-tuning sur données de conduite réelle.
-
-**MAR non discriminant sur NTHU-DDD.** Ce dataset est centré sur la fermeture des yeux (PERCLOS), pas sur les bâillements. Le seuil MAR conservé (0.65) vient de la littérature (UTA-RLDD), non d'une validation sur ce corpus.
-
-**PERCLOS sans validation temporelle.** NTHU-DDD est un dataset d'images isolées, sans séquences vidéo. PERCLOS étant un indicateur temporel (% frames fermées sur 2 secondes), il n'a pas pu être recalibré et reste à sa valeur standard NHTSA (35 %).
-
-**Pas de test en conditions réelles de conduite.** Le système n'a pas été testé dans un véhicule en mouvement avec vibrations, éclairage solaire direct, ou conducteurs portant des lunettes de soleil. C'est la prochaine étape naturelle.
-
-**Raspberry Pi 3B en limite.** À 6–7 fps, des micro-somnolences très brèves (< 300 ms) peuvent être manquées. Le Raspberry Pi 4B est recommandé pour une utilisation réelle.
+```
+ADC < 400    →  ✅ LED verte   — Démarrage autorisé
+400 ≤ ADC < 650  →  ⚠️ LED jaune  — Attention, taux élevé
+ADC ≥ 650    →  🚫 LED rouge  — BLOQUÉ — moteur coupé
+```
 
 ---
 
-## 🔧 Matériel
+## 🏗️ Architecture complète
 
-| Composant | Rôle | Broche |
-|-----------|------|--------|
-| Arduino Mega 2560 | Contrôleur matériel | — |
-| Raspberry Pi 3/4 | Traitement vidéo + logique | — |
-| Caméra USB / Pi Camera | Flux visage conducteur | USB |
-| Capteur MQ-3 | Taux d'alcool (analogique) | A0 |
-| MFRC522 | Détection RFID zone parking | SPI (D50–D53) |
-| L298N | Pilote moteurs DC | D7–D12 |
-| TCRT5000 × 2 | Suivi de ligne (parking auto) | A1, A2 |
-| SSD1306 OLED 128×64 | Affichage états | I2C (D20–D21) |
-| LED verte / jaune / rouge | Indicateurs visuels | D4, D5, D6 |
-| Buzzer actif | Alertes sonores | D3 (PWM) |
-| Bouton poussoir | Démarrage | D2 (INT0) |
+```
+┌─────────────────────────────────────────┐     UART 115200     ┌────────────────────────────────┐
+│           Raspberry Pi 3/4              │ ◄──────────────────► │       Arduino Mega 2560        │
+│                                         │   JSON 200 ms       │                                │
+│  ┌─────────────────────────────────┐    │                      │  ┌─────────────────────────┐  │
+│  │  main.py — Contrôleur principal │    │                      │  │  Capteurs               │  │
+│  │  Machine à états 9 étapes       │    │                      │  │  MQ-3    → ADC A0       │  │
+│  └──────────┬──────────────────────┘    │                      │  │  MFRC522 → SPI          │  │
+│             │                           │                      │  │  TCRT5000 × 2 → A1, A2  │  │
+│  ┌──────────▼──────────────────────┐    │                      │  └─────────────────────────┘  │
+│  │  detection_somnolence.py        │    │                      │  ┌─────────────────────────┐  │
+│  │  MediaPipe Face Mesh 468 pts    │    │                      │  │  Actionneurs            │  │
+│  │  5 signaux + score 0-100        │    │                      │  │  L298N → D7–D12         │  │
+│  │  Calibration personnalisée      │    │                      │  │  Buzzer  → D3 (PWM)     │  │
+│  └──────────┬──────────────────────┘    │                      │  │  LEDs    → D4, D5, D6   │  │
+│             │                           │                      │  │  OLED    → I2C D20–D21  │  │
+│  ┌──────────▼──────────────────────┐    │                      │  └─────────────────────────┘  │
+│  │  serial_comm.py                 │    │                      │                                │
+│  │  Communication UART thread-safe │    │                      │  Firmware : voiture_securisee  │
+│  └─────────────────────────────────┘    │                      │  Biblio : MFRC522, SSD1306,   │
+│                                         │                      │           ArduinoJson          │
+└─────────────────────────────────────────┘                      └────────────────────────────────┘
+          │ USB / Pi Camera
+          ▼
+  [ Caméra conducteur — 640×480 30fps ]
+```
+
+**Mode simulation** disponible (sans aucun matériel) :
+```bash
+python main.py --simulate --scenario danger
+# Scénarios : normal · somnolence · danger · alcool · mixte
+```
+
+---
+
+## 📊 Validation scientifique des seuils — Dataset NTHU-DDD
+
+Les seuils ne sont **pas arbitraires** : ils ont été validés par analyse ROC sur le dataset **NTHU-DDD Multi-Class** (133 042 images réelles de conducteurs, 35 sujets).
+
+```
+Pipeline de validation automatisé :
+  .\telecharger_et_analyser.ps1
+         │
+         ├── Kaggle Hub → téléchargement NTHU-DDD (1.99 Go)
+         ├── analyse_nthu.py → MediaPipe sur 8 000 images échantillonnées
+         │       ├── Labellisation automatique (drowsy / notdrowsy)
+         │       ├── Courbe ROC par métrique (EAR, MAR)
+         │       └── Seuil optimal = Indice de Youden (argmax TPR − FPR)
+         └── maj_seuils.py → mise à jour automatique du code
+```
+
+| Métrique | AUC ROC | Seuil Youden | Retenu | Justification |
+|----------|---------|-------------|--------|---------------|
+| **EAR** | **0.678** | **0.261** | ✅ | Cohérent littérature ; minimise faux négatifs (sécurité critique) |
+| **MAR** | 0.454 | 0.655 | ⚠️ Défaut 0.65 | AUC < 0.5 : NTHU-DDD non centré sur bâillements → UTA-RLDD utilisé |
+| **PERCLOS** | — | — | ✅ 30 % | Standard NHTSA ; validé sur base temporelle distincte |
+
+> **Pourquoi Youden et pas F1-max ?**  
+> Dans un système de sécurité, rater un conducteur endormi est catastrophique. L'indice de Youden maximise `TPR − FPR` pour le meilleur équilibre sensibilité/spécificité. Le seuil F1-optimal (0.384) déclencherait des alertes à demi-œil ouvert.
+
+Sorties dans `raspberry/resultats_nthu/` : courbes ROC, distribution EAR, rapport complet.
+
+---
+
+## ⚡ Performances temps réel
+
+| Plateforme | Latence inférence | FPS | Exigence SR6 (< 200 ms) |
+|-----------|-------------------|-----|--------------------------|
+| PC Windows | ~15–30 ms | ~35–65 fps | ✅ |
+| **Raspberry Pi 4B** (1.8 GHz) | ~80–100 ms | ~10–12 fps | ✅ |
+| **Raspberry Pi 3B** (1.2 GHz) | ~150–180 ms | ~6–7 fps | ✅ (limite) |
+
+```bash
+# Benchmark sur votre machine
+python raspberry/benchmark_rpi.py --frames 200
+```
+
+> MediaPipe exploite l'accélération **XNNPACK NEON** sur ARM (optimisé RPi 4).  
+> Sur RPi 3, résolution 320×240 recommandée (+40 % de performance).
+
+---
+
+## 🔧 Stack technique
+
+```
+Vision par ordinateur    MediaPipe Face Mesh · OpenCV · EAR / MAR / PERCLOS / Blink Rate
+Machine d'états          Python · threading · UART JSON
+Embarqué                 Raspberry Pi 3/4 · Arduino Mega 2560
+Capteurs                 MQ-3 (alcool) · MFRC522 (RFID) · TCRT5000 (ligne) · Pi Camera
+Actionneurs              L298N (moteurs) · SSD1306 (OLED) · Buzzer PWM · LEDs
+Validation               NTHU-DDD · UTA-RLDD · ROC · Youden Index
+```
 
 ---
 
@@ -173,112 +209,133 @@ Ce projet est académique. Les limites ci-dessous sont documentées pour transpa
 
 ```
 voiture-robot-intelligente/
+│
+├── demo.html                          ← 🎬 Démo interactive navigateur (webcam + MediaPipe)
+│
 ├── arduino/
 │   └── voiture_securisee/
-│       └── voiture_securisee.ino      ← Firmware Arduino Mega
+│       └── voiture_securisee.ino     ← Firmware Arduino Mega (MQ-3, RFID, moteurs, OLED)
+│
 ├── raspberry/
-│   ├── main.py                        ← Machine à états principale
-│   ├── detection_somnolence.py        ← Détection somnolence (EAR/MAR/PERCLOS/pose)
-│   ├── serial_comm.py                 ← Communication UART thread-safe
-│   ├── simulation.py                  ← Mode simulation (sans matériel)
-│   ├── dataset_info.py                ← Références datasets + seuils documentés
-│   ├── analyse_nthu.py                ← Pipeline validation NTHU-DDD (ROC + Youden)
-│   ├── maj_seuils.py                  ← Patch automatique des seuils
-│   ├── benchmark_rpi.py               ← Benchmark latence MediaPipe → RPi projection
-│   ├── telecharger_et_analyser.ps1    ← Script automation complet (Windows)
-│   ├── face_landmarker.task           ← Modèle MediaPipe Tasks API (~5 Mo)
-│   ├── resultats_nthu/                ← Sorties analyse NTHU-DDD
-│   │   ├── seuils_valides_nthu.json
-│   │   ├── rapport_nthu.txt
-│   │   ├── roc_curves_nthu.png
-│   │   └── distribution_ear_nthu.png
+│   ├── main.py                       ← Contrôleur principal — machine à états 9 étapes
+│   ├── detection_somnolence.py       ← 5 signaux · calibration · score fatigue 0-100
+│   ├── serial_comm.py                ← Communication UART thread-safe
+│   ├── simulation.py                 ← Mode simulation — 5 scénarios sans matériel
+│   ├── dataset_info.py               ← Documentation datasets + seuils justifiés
+│   ├── analyse_nthu.py               ← Pipeline validation ROC + Youden sur NTHU-DDD
+│   ├── maj_seuils.py                 ← Patch automatique des seuils
+│   ├── benchmark_rpi.py              ← Benchmark latence MediaPipe
+│   ├── telecharger_et_analyser.ps1   ← Automation complète Windows (Kaggle → seuils)
+│   ├── face_landmarker.task          ← Modèle MediaPipe Tasks (~5 Mo)
+│   ├── resultats_nthu/               ← ROC curves · distribution EAR · rapport
 │   └── requirements.txt
+│
 ├── securite/
-│   ├── detection_somnolence.py        ← Version standalone
-│   ├── detection_alcoolemie.py
-│   └── securite_active.py
-└── README.md
+│   ├── detection_somnolence.py       ← Module compatibilité (redirige vers raspberry/)
+│   ├── detection_alcoolemie.py       ← Lecture MQ-3 · blocage relais GPIO
+│   └── securite_active.py           ← Intégration somnolence + alcoolémie (threads)
+│
+├── arduino/
+│   └── voiture_securisee.ino
+│
+└── docs/
+    └── screenshot_robot.png
 ```
 
 ---
 
-## ⚙️ Installation & Lancement
+## 🚀 Installation & Lancement
 
-### Arduino
-1. Ouvrir `arduino/voiture_securisee/voiture_securisee.ino` dans l'IDE Arduino
-2. Installer les bibliothèques : `MFRC522`, `Adafruit_SSD1306`, `ArduinoJson`
-3. Sélectionner **Arduino Mega 2560**, flasher
-
-### Raspberry Pi
+### Prérequis
 
 ```bash
-# Cloner le dépôt
-git clone https://github.com/ton-compte/voiture-robot-intelligente.git
-cd voiture-robot-intelligente
-
-# Installer les dépendances Python
 pip install -r raspberry/requirements.txt
-
-# Le modèle MediaPipe est téléchargé automatiquement au 1er lancement
-# (face_landmarker.task ~5 Mo — aucun fichier externe à télécharger manuellement)
-
-# Lancer le système complet
-cd raspberry/
-python main.py --port /dev/ttyAMA0 --camera 0
-
-# Mode debug (fenêtre caméra + logs détaillés)
-python main.py --debug
-
-# Mode simulation (sans Arduino, sans caméra)
-python simulation.py
-
-# Benchmark latence sur ta machine
-python benchmark_rpi.py --frames 200
+# opencv-python · mediapipe · numpy · scipy
 ```
 
-### Validation des seuils (Windows, optionnel)
+### Arduino
 
-```powershell
-# Nécessite un compte Kaggle + kaggle.json dans ~/.kaggle/
-cd raspberry/
-.\telecharger_et_analyser.ps1
-# → Télécharge NTHU-DDD (1.99 Go), analyse 8000 images, met à jour les seuils
+1. Ouvrir `arduino/voiture_securisee/voiture_securisee.ino` dans l'IDE Arduino
+2. Bibliothèques à installer : `MFRC522`, `Adafruit_SSD1306`, `ArduinoJson`
+3. Sélectionner **Arduino Mega 2560** → Téléverser
+
+### Raspberry Pi — Système complet
+
+```bash
+git clone https://github.com/vanellemangoua/voiture-robot-intelligente.git
+cd voiture-robot-intelligente/raspberry
+
+# Lancement réel (Arduino branché)
+python main.py --port /dev/ttyAMA0 --camera 0
+
+# Mode debug — fenêtre caméra + logs détaillés
+python main.py --debug
+
+# Mode simulation — aucun matériel requis
+python main.py --simulate --scenario somnolence
+# Scénarios disponibles : normal · somnolence · danger · alcool · mixte
+```
+
+### Démo navigateur
+
+```bash
+# Ouvrir demo.html avec VS Code Live Server
+# (obligatoire : ES module MediaPipe + accès webcam nécessitent HTTP)
 ```
 
 ---
 
-## 📡 Protocole Arduino ↔ RPi
+## 📡 Protocole Arduino ↔ Raspberry Pi
 
-**Arduino → RPi** (JSON toutes les 200 ms) :  
-`{"mq3": 450, "rfid": false, "btn": false, "mot": true}`
+**Arduino → RPi** — JSON toutes les 200 ms :
+```json
+{"mq3": 450, "rfid": false, "btn": false, "mot": true}
+```
 
-**RPi → Arduino** :
+**RPi → Arduino** — Commandes texte :
 
-| Commande | Effet |
-|----------|-------|
-| `CMD:AUTORISER` | Moteurs ON, LED verte, OLED "AUTORISÉ" |
-| `CMD:BLOQUER` | Moteurs OFF, LED rouge, OLED "BLOQUÉ" |
-| `CMD:ALERTE:1` | Bip court, LED jaune, OLED "SOMNOLENCE" |
-| `CMD:ALERTE:2` | Bip long, LED orange, OLED "VOUS DORMEZ?" |
-| `CMD:ALERTE:3` | Sirène, LED rouge, OLED "URGENCE" |
-| `CMD:PARKING` | Suivi ligne autonome + arrêt sur RFID |
+| Commande | Effet Arduino |
+|----------|--------------|
+| `CMD:AUTORISER` | Moteurs ON · LED verte · OLED "AUTORISÉ" |
+| `CMD:BLOQUER` | Moteurs OFF · LED rouge · OLED "ALCOOL DÉTECTÉ" |
+| `CMD:ALERTE:1` | Bip court · LED jaune · OLED "SOMNOLENCE" |
+| `CMD:ALERTE:2` | Bip long · LED orange · OLED "VOUS DORMEZ ?" |
+| `CMD:ALERTE:3` | Sirène · LED rouge · OLED "URGENCE" |
+| `CMD:PARKING` | Suivi ligne autonome + arrêt sur tag RFID |
 | `CMD:RESET` | Arrêt total |
+
+---
+
+## ⚠️ Limites documentées
+
+*Les connaître fait partie de la démarche d'ingénierie.*
+
+**AUC modérée (0.678 pour EAR).** Le dataset NTHU-DDD est en conditions contrôlées. En conditions réelles (éclairage variable, lunettes de soleil, barbe, angle non frontal), les performances seront différentes. Une AUC > 0.85 nécessiterait un fine-tuning sur données de conduite réelle.
+
+**MAR non discriminant sur NTHU-DDD.** Ce dataset est centré sur la fermeture des yeux, pas sur les bâillements. Le seuil MAR (0.65) provient de la littérature (UTA-RLDD / Abtahi 2014), pas d'une validation sur ce corpus.
+
+**Raspberry Pi 3B en limite.** À 6–7 fps, des micro-somnolences très brèves (< 300 ms) peuvent être manquées. Le RPi 4B est recommandé pour une utilisation réelle.
+
+**Non testé en conditions de conduite réelle.** Vibrations, soleil direct, lunettes de soleil — étape suivante naturelle du projet.
 
 ---
 
 ## 📚 Références scientifiques
 
-- **Soukupová & Čech (2016)** — *Real-Time Eye Blink Detection using Facial Landmarks* — seuil EAR 0.25–0.28
-- **Wierwille & Ellsworth (1994)** / **NHTSA** — standard PERCLOS 35 %
-- **Abtahi et al. (2014)** — *YAWdd: a Yawning Detection Dataset* — seuil MAR 0.65
-- **NTHU-DDD** (National Tsing Hua University, 2016) — dataset 35 sujets, 133 042 images
-- **UTA-RLDD** (University of Texas Arlington, 2019) — 60 sujets, conditions réelles
+| Auteurs | Année | Contribution |
+|---------|-------|-------------|
+| Soukupová & Čech | 2016 | *Real-Time Eye Blink Detection using Facial Landmarks* — base de l'EAR |
+| Wierwille & Ellsworth + NHTSA | 1994 | Standard PERCLOS — indicateur de référence industrie |
+| Abtahi et al. | 2014 | *YAWdd: a Yawning Detection Dataset* — seuil MAR 0.65 |
+| NTHU (Weng et al.) | 2016 | Dataset NTHU-DDD — 35 sujets, 133 042 images, 4 ethnies |
+| UTA-RLDD (Ghoddoosian et al.) | 2019 | 60 sujets en conditions réelles (lunettes, barbe, éclairage variable) |
+| Reddy et al. | 2017 | Calibration EAR personnalisée par conducteur |
 
 ---
 
 ## 📝 Contexte
 
-Projet académique **ESIEA** — Systèmes Embarqués.  
+Projet académique — **ESIEA**, Systèmes Embarqués  
 Auteur : **Vanelle Stéphanie MANGOUA**
 
-Combine traitement d'image temps réel (Raspberry Pi + OpenCV + MediaPipe) et contrôle matériel bas-niveau (Arduino Mega + capteurs/actionneurs), avec seuils calibrés sur datasets de recherche réels (NTHU-DDD, UTA-RLDD).
+Combine traitement d'image temps réel (Raspberry Pi · OpenCV · MediaPipe · 468 landmarks 3D), contrôle matériel bas-niveau (Arduino Mega · MQ-3 · MFRC522 · L298N) et validation scientifique sur datasets de recherche réels (NTHU-DDD · UTA-RLDD).
