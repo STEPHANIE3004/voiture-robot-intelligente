@@ -2,379 +2,486 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>🤖 Voiture Robot Intelligente — Tableau de Bord</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🚗 Voiture Robot Intelligente — Sécurité Active Conducteur</title>
 <style>
-  :root { --bg:#0a0e1a; --bg2:#0f1626; --bg3:#141d2e; --border:#1e2d47; --text:#e0e8ff; --muted:#6b7fa3; --blue:#4fc3f7; --green:#69f0ae; --red:#ff5252; --yellow:#ffd740; --orange:#ff9800; }
+  :root {
+    --bg:#0a0f0a; --panel:#0f1a0f; --border:#1a2e1a; --green:#2dc653;
+    --green2:#1a7a30; --yellow:#f5a623; --red:#e53e3e; --blue:#4299e1;
+    --purple:#9f7aea; --muted:#4a6a4a; --text:#d4ecd4; --white:#e8f5e8;
+  }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
-  header{background:var(--bg2);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:16px}
-  header h1{font-size:18px;font-weight:700;color:var(--blue)}
-  .sub{font-size:12px;color:var(--muted)}
-  .live{display:flex;align-items:center;gap:6px;margin-left:auto;font-size:12px;color:var(--green)}
-  .dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:blink 1s infinite}
-  @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
-
-  .grid{display:grid;grid-template-columns:1fr 1fr 320px;gap:14px;padding:18px;max-width:1300px;margin:0 auto}
-  .panel{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px}
-  .ptitle{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px}
-
-  /* Robot top-view */
-  #robot-canvas{display:block;margin:0 auto;border-radius:8px}
-
-  /* Sensors */
-  .sensor-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .sensor{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center}
-  .sensor-val{font-size:26px;font-weight:700;line-height:1}
-  .sensor-name{font-size:10px;color:var(--muted);margin-top:4px}
-  .sensor-bar{height:5px;border-radius:3px;background:var(--border);margin-top:6px;overflow:hidden}
-  .sensor-fill{height:100%;border-radius:3px;transition:width .4s,background .4s}
-
-  /* State */
-  .state-card{background:var(--bg3);border-radius:8px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px}
-  .state-icon{font-size:28px}
-  .state-label{font-size:13px;font-weight:600}
-  .state-sub{font-size:11px;color:var(--muted)}
-
-  /* Motors */
-  .motor-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
-  .motor{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px;text-align:center}
-  .motor-name{font-size:10px;color:var(--muted);margin-bottom:4px}
-  .motor-val{font-size:20px;font-weight:700}
-
-  /* Serial log */
-  .serial{background:#000;border:1px solid #1a2a1a;border-radius:6px;padding:10px;height:200px;overflow-y:auto;font-family:'Courier New',monospace;font-size:11px}
+  body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;font-size:12px;min-height:100vh}
+  .topbar{background:var(--panel);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .topbar h1{font-size:14px;color:var(--white);font-weight:700}
+  .sub{font-size:10px;color:var(--muted)}
+  .live{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--green);margin-left:auto}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 1.2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+  .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:8px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 8px 8px}
+  .grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;padding:0 8px 8px}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:10px}
+  .ptitle{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:4px}
+  .state-display{text-align:center;padding:10px}
+  .state-icon{font-size:36px;margin-bottom:4px}
+  .state-name{font-size:18px;font-weight:800;color:var(--green);letter-spacing:.05em}
+  .state-desc{font-size:10px;color:var(--muted);margin-top:3px}
+  .state-flow{display:flex;align-items:center;justify-content:center;gap:4px;flex-wrap:wrap;margin-top:8px}
+  .sf-node{font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--border);color:var(--muted)}
+  .sf-node.active{border-color:var(--green);color:var(--green);background:#0f2a14}
+  .sf-node.done{border-color:var(--green2);color:var(--green2)}
+  .sf-arr{color:var(--muted);font-size:9px}
+  .metric-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+  .metric-label{font-size:10px;color:var(--muted)}
+  .metric-val{font-size:13px;font-weight:700;font-family:'Courier New',monospace}
+  .metric-bar{height:4px;background:#0a1a0a;border-radius:2px;margin-top:2px;overflow:hidden;margin-bottom:2px}
+  .metric-fill{height:100%;border-radius:2px;transition:width .3s}
+  .threshold-line{font-size:9px;color:var(--muted);text-align:right;margin-bottom:6px}
+  .alert-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+  .alert-box{text-align:center;padding:6px 4px;border-radius:4px;border:1px solid var(--border)}
+  .alert-box .al-icon{font-size:16px}
+  .alert-box .al-label{font-size:9px;color:var(--muted);margin-top:2px}
+  .alert-box.active-0{border-color:#2dc653;background:#0f2a14}
+  .alert-box.active-1{border-color:#f5a623;background:#1a1400}
+  .alert-box.active-2{border-color:#ed8936;background:#1a0f00}
+  .alert-box.active-3{border-color:#e53e3e;background:#1a0000;animation:alertpulse .6s infinite}
+  @keyframes alertpulse{0%,100%{opacity:1}50%{opacity:.6}}
+  .hw-item{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #0f1a0f;font-size:10px}
+  .hw-item:last-child{border:none}
+  .hw-tag{background:#0f1a0f;border:1px solid var(--border);border-radius:3px;padding:1px 5px;font-size:9px;color:var(--green)}
+  .serial{background:#000;border:1px solid #0a1a0a;border-radius:4px;height:130px;overflow-y:auto;padding:6px;font-size:10px}
   .serial::-webkit-scrollbar{width:3px}
-  .serial::-webkit-scrollbar-thumb{background:#333}
-  .sl{padding:1px 0}
-  .sl.ok{color:var(--green)}
-  .sl.warn{color:var(--yellow)}
-  .sl.err{color:var(--red)}
-  .sl.info{color:var(--blue)}
-
-  /* Servo gauge */
-  #servo-canvas{display:block;margin:0 auto}
-
-  /* Speed slider */
-  .slider-row{display:flex;align-items:center;gap:10px;margin-top:8px}
-  .slider-row input{flex:1;accent-color:var(--blue)}
-  .slider-val{font-size:13px;font-weight:600;color:var(--blue);min-width:40px}
-
-  .btn{padding:8px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;margin:4px 2px;transition:all .2s}
-  .btn-blue{background:#0d2a3d;color:var(--blue);border:1px solid var(--blue)}
-  .btn-blue:hover{background:#1a4a6e}
-  .btn-red{background:#2d0f0f;color:var(--red);border:1px solid var(--red)}
-  .btn-red:hover{background:#5a1a1a}
-  .btn-green{background:#0a2016;color:var(--green);border:1px solid var(--green)}
-  .btn-green:hover{background:#1a5c28}
+  .serial::-webkit-scrollbar-thumb{background:#1a3a1a}
+  .sl-ok{color:var(--green)} .sl-warn{color:var(--yellow)} .sl-err{color:var(--red)} .sl-info{color:#4a7a6a} .sl-cmd{color:var(--blue)}
+  canvas{border-radius:4px;background:#000;width:100%;display:block}
+  .ds-metric{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #0f1a0f;font-size:10px}
+  .ds-val{font-weight:700;color:var(--green)}
+  .ds-warn{color:var(--yellow)}
+  .btn{border:none;border-radius:4px;padding:5px 10px;font-size:10px;cursor:pointer;font-family:'Courier New',monospace;font-weight:700}
+  .btn-green{background:var(--green2);color:var(--white)}
+  .btn-red{background:#7a1a1a;color:#ffaaaa}
+  .btn-blue{background:#1a3a5a;color:#aaddff}
+  .btn-yellow{background:#3a2a00;color:var(--yellow)}
+  .btn-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+  .btn-row button{flex:1}
+  .bench-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #0f1a0f;font-size:10px}
+  .bench-ok{color:var(--green)} .bench-warn{color:var(--yellow)}
+  #faceCanvas{height:140px}
+  .roc-bar{height:6px;background:#0a1a0a;border-radius:3px;margin:4px 0;overflow:hidden}
+  .roc-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--red),var(--yellow),var(--green))}
 </style>
 </head>
 <body>
-<header>
-  <span style="font-size:26px">🤖</span>
-  <div><h1>Voiture Robot Intelligente</h1><div class="sub">Arduino Uno · HC-SR04 + Servo SG90 + L298N + TCRT5000</div></div>
+
+<div class="topbar">
+  <div>
+    <div class="topbar h1">🚗 Voiture Robot Intelligente — Sécurité Active Conducteur</div>
+    <div class="sub">Raspberry Pi · MediaPipe Face Mesh 468 landmarks · Arduino Mega 2560 · EAR / MAR / PERCLOS · Dataset NTHU-DDD 133 042 images</div>
+  </div>
   <div class="live"><div class="dot"></div>Simulation active</div>
-</header>
+</div>
 
 <div class="grid">
-  <!-- Robot view -->
+  <!-- Machine à états -->
   <div class="panel">
-    <div class="ptitle">📡 Vue du robot — Détection obstacles</div>
-    <canvas id="robot-canvas" width="320" height="300"></canvas>
-    <div style="margin-top:12px">
-      <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Vitesse moteurs</div>
-      <div class="slider-row">
-        <span style="font-size:11px;color:var(--muted)">0%</span>
-        <input type="range" id="speed-slider" min="0" max="100" value="75">
-        <span style="font-size:11px;color:var(--muted)">100%</span>
-        <span class="slider-val" id="speed-val">75%</span>
-      </div>
+    <div class="ptitle">📟 Machine à états</div>
+    <div class="state-display">
+      <div class="state-icon" id="state-icon">✅</div>
+      <div class="state-name" id="state-name">AUTORISÉ</div>
+      <div class="state-desc" id="state-desc">Alcool OK — Conduite normale</div>
     </div>
-    <div style="margin-top:10px;text-align:center">
-      <button class="btn btn-green" onclick="setState('forward')">▲ AVANT</button>
-      <button class="btn btn-blue" onclick="setState('left')">◄ GAUCHE</button>
-      <button class="btn btn-red" onclick="setState('stop')">■ STOP</button>
-      <button class="btn btn-blue" onclick="setState('right')">DROITE ►</button>
+    <div class="state-flow">
+      <div class="sf-node done" id="sf-idle">IDLE</div>
+      <div class="sf-arr">→</div>
+      <div class="sf-node done" id="sf-verif">VÉRIF</div>
+      <div class="sf-arr">→</div>
+      <div class="sf-node active" id="sf-auto">AUTORISÉ</div>
+      <div class="sf-arr">→</div>
+      <div class="sf-node" id="sf-a1">ALERTE 1</div>
+      <div class="sf-arr">→</div>
+      <div class="sf-node" id="sf-a2">ALERTE 2</div>
+      <div class="sf-arr">→</div>
+      <div class="sf-node" id="sf-a3">ALERTE 3</div>
+      <div class="sf-arr">→</div>
+      <div class="sf-node" id="sf-park">PARKING</div>
     </div>
-  </div>
-
-  <!-- Servo + Sensors -->
-  <div style="display:flex;flex-direction:column;gap:14px">
-    <div class="panel">
-      <div class="ptitle">🔄 Servo SG90 — Balayage sonar</div>
-      <canvas id="servo-canvas" width="280" height="160"></canvas>
-    </div>
-    <div class="panel">
-      <div class="ptitle">📊 Capteurs</div>
-      <div class="sensor-grid">
-        <div class="sensor">
-          <div class="sensor-val" id="dist-val" style="color:var(--green)">—</div>
-          <div class="sensor-name">Distance HC-SR04 (cm)</div>
-          <div class="sensor-bar"><div class="sensor-fill" id="dist-bar" style="width:0%;background:var(--green)"></div></div>
-        </div>
-        <div class="sensor">
-          <div class="sensor-val" id="servo-val" style="color:var(--blue)">90°</div>
-          <div class="sensor-name">Angle servo</div>
-          <div class="sensor-bar"><div class="sensor-fill" id="servo-bar" style="width:50%;background:var(--blue)"></div></div>
-        </div>
-        <div class="sensor">
-          <div class="sensor-val" id="line-val" style="color:var(--yellow)">—</div>
-          <div class="sensor-name">Suivi ligne TCRT5000</div>
-          <div class="sensor-bar"><div class="sensor-fill" id="line-bar" style="width:0%;background:var(--yellow)"></div></div>
-        </div>
-        <div class="sensor">
-          <div class="sensor-val" id="speed-val2" style="color:var(--orange)">75%</div>
-          <div class="sensor-name">Vitesse PWM</div>
-          <div class="sensor-bar"><div class="sensor-fill" id="speed-bar" style="width:75%;background:var(--orange)"></div></div>
-        </div>
-      </div>
+    <div class="btn-row" style="margin-top:10px">
+      <button class="btn btn-green" onclick="setScenario('normal')">▶ Normal</button>
+      <button class="btn btn-yellow" onclick="setScenario('drowsy')">😴 Somnolence</button>
+      <button class="btn btn-red" onclick="setScenario('alcohol')">🍺 Alcool</button>
+      <button class="btn btn-blue" onclick="setScenario('emergency')">🚨 Urgence</button>
     </div>
   </div>
 
-  <!-- Right panel -->
-  <div style="display:flex;flex-direction:column;gap:14px">
-    <div class="panel">
-      <div class="ptitle">🚦 État du robot</div>
-      <div class="state-card" id="state-card">
-        <div class="state-icon" id="state-icon">⬆️</div>
-        <div><div class="state-label" id="state-label">AVANCE</div><div class="state-sub" id="state-sub">Voie libre — Distance > 25 cm</div></div>
+  <!-- Métriques somnolence -->
+  <div class="panel">
+    <div class="ptitle">👁️ Indicateurs somnolence temps réel</div>
+    <div>
+      <div class="metric-row">
+        <span class="metric-label">EAR — Eye Aspect Ratio</span>
+        <span class="metric-val" id="ear-val" style="color:var(--green)">0.312</span>
       </div>
-      <div class="motor-row">
-        <div class="motor"><div class="motor-name">Moteur Gauche</div><div class="motor-val" id="ml-val" style="color:var(--green)">FWD</div></div>
-        <div class="motor"><div class="motor-name">Moteur Droit</div><div class="motor-val" id="mr-val" style="color:var(--green)">FWD</div></div>
+      <div class="metric-bar"><div class="metric-fill" id="ear-bar" style="width:69%;background:var(--green)"></div></div>
+      <div class="threshold-line">Seuil : 0.261 (Youden / NTHU-DDD)</div>
+    </div>
+    <div>
+      <div class="metric-row">
+        <span class="metric-label">MAR — Mouth Aspect Ratio</span>
+        <span class="metric-val" id="mar-val" style="color:var(--green)">0.41</span>
+      </div>
+      <div class="metric-bar"><div class="metric-fill" id="mar-bar" style="width:34%;background:var(--green)"></div></div>
+      <div class="threshold-line">Seuil : 0.65 (Abtahi 2014 / UTA-RLDD)</div>
+    </div>
+    <div>
+      <div class="metric-row">
+        <span class="metric-label">PERCLOS — % yeux fermés / 60 frames</span>
+        <span class="metric-val" id="perclos-val" style="color:var(--green)">8%</span>
+      </div>
+      <div class="metric-bar"><div class="metric-fill" id="perclos-bar" style="width:8%;background:var(--green)"></div></div>
+      <div class="threshold-line">Seuil : 35 % (standard NHTSA)</div>
+    </div>
+    <div>
+      <div class="metric-row">
+        <span class="metric-label">Head pose — roulis</span>
+        <span class="metric-val" id="pose-val" style="color:var(--green)">4°</span>
+      </div>
+      <div class="metric-bar"><div class="metric-fill" id="pose-bar" style="width:9%;background:var(--green)"></div></div>
+      <div class="threshold-line">Seuil : 20° roulis / 15° tangage</div>
+    </div>
+  </div>
+
+  <!-- Alertes + alcool -->
+  <div class="panel">
+    <div class="ptitle">🚨 Niveaux d'alerte</div>
+    <div class="alert-grid">
+      <div class="alert-box active-0" id="al0">
+        <div class="al-icon">✅</div>
+        <div class="al-label">NORMAL</div>
+        <div style="font-size:9px;color:#2dc653;margin-top:2px">LED verte</div>
+      </div>
+      <div class="alert-box" id="al1">
+        <div class="al-icon">⚡</div>
+        <div class="al-label">ALERTE 1</div>
+        <div style="font-size:9px;color:var(--muted);margin-top:2px">Bip court</div>
+      </div>
+      <div class="alert-box" id="al2">
+        <div class="al-icon">🔔</div>
+        <div class="al-label">ALERTE 2</div>
+        <div style="font-size:9px;color:var(--muted);margin-top:2px">Bip long</div>
+      </div>
+      <div class="alert-box" id="al3">
+        <div class="al-icon">🚨</div>
+        <div class="al-label">ALERTE 3</div>
+        <div style="font-size:9px;color:var(--muted);margin-top:2px">Sirène</div>
       </div>
     </div>
-
-    <div class="panel" style="flex:1">
-      <div class="ptitle">💻 Serial Monitor Arduino</div>
-      <div class="serial" id="serial-log"></div>
-      <div style="margin-top:8px;text-align:right">
-        <button class="btn btn-blue" onclick="clearSerial()">Effacer</button>
-        <button class="btn btn-green" onclick="toggleSim()">▶/⏸ Auto</button>
+    <div style="margin-top:10px">
+      <div class="ptitle">🍺 Alcoolémie MQ-3</div>
+      <div class="metric-row" style="margin-top:4px">
+        <span class="metric-label">Valeur ADC (A0)</span>
+        <span class="metric-val" id="mq3-val" style="color:var(--green)">213</span>
+      </div>
+      <div class="metric-bar"><div class="metric-fill" id="mq3-bar" style="width:21%;background:var(--green)"></div></div>
+      <div class="threshold-line">Seuil blocage : 400 ADC (~0.5 g/L)</div>
+    </div>
+    <div style="margin-top:6px">
+      <div class="ptitle" style="margin-bottom:4px">🅿️ RFID Parking</div>
+      <div style="display:flex;justify-content:space-between;font-size:10px">
+        <span>Zone détectée (MFRC522)</span>
+        <span id="rfid-status" style="color:var(--muted)">❌ Hors zone</span>
       </div>
     </div>
   </div>
 </div>
 
+<div class="grid2">
+  <!-- Face landmarks -->
+  <div class="panel">
+    <div class="ptitle">👤 MediaPipe Face Mesh — 468 landmarks 3D (simulation)</div>
+    <canvas id="faceCanvas" height="140"></canvas>
+    <div style="display:flex;gap:12px;margin-top:6px;flex-wrap:wrap">
+      <span style="font-size:9px;color:#1a3a1a">● Points faciaux</span>
+      <span style="font-size:9px;color:var(--green)">● Contours yeux</span>
+      <span style="font-size:9px;color:var(--blue)">● Contours bouche</span>
+      <span style="font-size:9px;color:var(--yellow)">● Axe crânien (pose)</span>
+    </div>
+  </div>
+
+  <!-- Serial log -->
+  <div class="panel">
+    <div class="ptitle" style="display:flex;justify-content:space-between;align-items:center">
+      <span>📡 Journal UART — RPi ↔ Arduino Mega</span>
+      <button class="btn btn-blue" onclick="clearSerial()" style="padding:2px 8px">Effacer</button>
+    </div>
+    <div class="serial" id="serial-log"></div>
+    <div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap">
+      <span style="font-size:9px;color:var(--green)">● Arduino→RPi JSON</span>
+      <span style="font-size:9px;color:var(--blue)">● RPi→Arduino CMD</span>
+      <span style="font-size:9px;color:var(--yellow)">● Warning</span>
+      <span style="font-size:9px;color:var(--red)">● Alerte</span>
+    </div>
+  </div>
+</div>
+
+<div class="grid4">
+  <!-- NTHU-DDD dataset -->
+  <div class="panel">
+    <div class="ptitle">📊 Validation — NTHU-DDD</div>
+    <div class="ds-metric"><span>Dataset</span><span class="ds-val">NTHU-DDD (2016)</span></div>
+    <div class="ds-metric"><span>Total images</span><span class="ds-val">133 042</span></div>
+    <div class="ds-metric"><span>Sujets</span><span class="ds-val">35 conducteurs</span></div>
+    <div class="ds-metric"><span>Échantillonnés</span><span class="ds-val">8 000 images</span></div>
+    <div class="ds-metric"><span>AUC EAR</span><span class="ds-val">0.678</span></div>
+    <div class="ds-metric"><span>Seuil Youden EAR</span><span class="ds-val">0.261</span></div>
+    <div class="ds-metric"><span>AUC MAR</span><span class="ds-warn">0.454 — non retenu</span></div>
+    <div class="ds-metric"><span>PERCLOS</span><span class="ds-val">35% (NHTSA)</span></div>
+    <div style="margin-top:6px;font-size:9px;color:var(--muted)">AUC EAR</div>
+    <div class="roc-bar"><div class="roc-fill" style="width:67.8%"></div></div>
+    <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--muted)"><span>0.5</span><span>0.678</span><span>1.0</span></div>
+  </div>
+
+  <!-- Benchmark RPi -->
+  <div class="panel">
+    <div class="ptitle">⚡ Latence MediaPipe — Benchmark</div>
+    <div class="bench-row"><span>PC Windows</span><span class="bench-ok">~20 ms · 50 fps</span></div>
+    <div class="bench-row"><span>Raspberry Pi 4B</span><span class="bench-ok">~90 ms · 11 fps ✅</span></div>
+    <div class="bench-row"><span>Raspberry Pi 3B</span><span class="bench-warn">~165 ms · 6 fps ✅*</span></div>
+    <div style="margin-top:8px">
+      <div class="metric-row">
+        <span class="metric-label">Latence totale (UART inclus)</span>
+        <span style="font-size:12px;font-weight:700;color:var(--green)">≤ 180 ms</span>
+      </div>
+      <div class="metric-bar"><div class="metric-fill" style="width:90%;background:var(--green)"></div></div>
+      <div class="threshold-line">SR6 &lt; 200 ms ✅ respecté</div>
+    </div>
+    <div style="font-size:9px;color:var(--muted);margin-top:4px">
+      * RPi 3B : 320×240 recommandé (+40% perf)<br>
+      XNNPACK NEON ARM acceleration active
+    </div>
+  </div>
+
+  <!-- Hardware -->
+  <div class="panel">
+    <div class="ptitle">🔧 Matériel</div>
+    <div class="hw-item"><span>Raspberry Pi 3/4</span><span class="hw-tag">Vidéo + logique</span></div>
+    <div class="hw-item"><span>Arduino Mega 2560</span><span class="hw-tag">Contrôle HW</span></div>
+    <div class="hw-item"><span>Caméra USB / Pi Camera</span><span class="hw-tag">USB</span></div>
+    <div class="hw-item"><span>MQ-3 (alcool)</span><span class="hw-tag">A0 ADC</span></div>
+    <div class="hw-item"><span>MFRC522 (RFID)</span><span class="hw-tag">SPI D50–53</span></div>
+    <div class="hw-item"><span>L298N (moteurs DC)</span><span class="hw-tag">D7–D12</span></div>
+    <div class="hw-item"><span>TCRT5000 × 2 (ligne)</span><span class="hw-tag">A1, A2</span></div>
+    <div class="hw-item"><span>SSD1306 OLED 128×64</span><span class="hw-tag">I2C D20–21</span></div>
+    <div class="hw-item"><span>Buzzer + LEDs R/J/V</span><span class="hw-tag">D3–D6 PWM</span></div>
+  </div>
+
+  <!-- Calibration & refs -->
+  <div class="panel">
+    <div class="ptitle">🎯 Calibration & Références</div>
+    <div class="ds-metric"><span>Calibration EAR</span><span class="ds-val">30 frames/personne</span></div>
+    <div class="ds-metric"><span>Fenêtre PERCLOS</span><span class="ds-val">60 frames (~2 s)</span></div>
+    <div class="ds-metric"><span>Délai alerte→parking</span><span class="ds-val">5 s × 3 niveaux</span></div>
+    <div class="ds-metric"><span>Landmarks EAR</span><span class="ds-val">pts 33,160,158,133,153,144</span></div>
+    <div style="margin-top:6px;border-top:1px solid var(--border);padding-top:6px;font-size:9px;color:var(--text);line-height:1.7">
+      Soukupová &amp; Čech (2016) — EAR 0.25–0.28<br>
+      NHTSA / Wierwille (1994) — PERCLOS 35%<br>
+      Abtahi et al. (2014) — MAR 0.65 (YAWdd)<br>
+      NTHU-DDD (2016) — 133K images, 35 sujets<br>
+      UTA-RLDD (2019) — 60 sujets, conditions réelles
+    </div>
+  </div>
+</div>
+
 <script>
-const robotCanvas = document.getElementById('robot-canvas');
-const rctx = robotCanvas.getContext('2d');
-const servoCanvas = document.getElementById('servo-canvas');
-const sctx = servoCanvas.getContext('2d');
-
-let distance = 80;
-let servoAngle = 90;
-let robotState = 'forward';
-let lineVal = 0;
-let simRunning = true;
-let simTimer = null;
-let obstacles = [];
-let scanDir = 1;
-
-// Generate random obstacle field
-function genObstacles() {
-  obstacles = [];
-  for (let i = 0; i < 3; i++) {
-    obstacles.push({ x: 80 + Math.random() * 160, y: 20 + Math.random() * 120, r: 15 + Math.random() * 20 });
-  }
-}
-genObstacles();
-
-function drawRobot() {
-  const W = robotCanvas.width, H = robotCanvas.height;
-  rctx.clearRect(0, 0, W, H);
-  rctx.fillStyle = '#050a14';
-  rctx.fillRect(0, 0, W, H);
-
-  // Grid
-  rctx.strokeStyle = '#0d1a2e'; rctx.lineWidth = 1;
-  for (let x = 0; x < W; x += 20) { rctx.beginPath(); rctx.moveTo(x,0); rctx.lineTo(x,H); rctx.stroke(); }
-  for (let y = 0; y < H; y += 20) { rctx.beginPath(); rctx.moveTo(0,y); rctx.lineTo(W,y); rctx.stroke(); }
-
-  // Obstacles
-  obstacles.forEach(o => {
-    rctx.beginPath(); rctx.arc(o.x, o.y, o.r, 0, Math.PI*2);
-    rctx.fillStyle = 'rgba(255,82,82,0.3)'; rctx.fill();
-    rctx.strokeStyle = '#ff5252'; rctx.lineWidth = 2; rctx.stroke();
-    rctx.fillStyle = '#ff5252'; rctx.font = '14px sans-serif'; rctx.textAlign='center';
-    rctx.fillText('🧱', o.x, o.y+5);
-  });
-
-  // Robot body (center-bottom)
-  const rx = W/2, ry = H - 70;
-
-  // Sonar beam
-  const angle = (servoAngle - 90) * Math.PI / 180;
-  const beamLen = Math.min(distance * 1.5, 180);
-  const bx = rx + Math.sin(angle) * beamLen;
-  const by = ry - Math.cos(angle) * beamLen;
-  const grad = rctx.createLinearGradient(rx, ry, bx, by);
-  const beamColor = distance < 25 ? '#ff5252' : distance < 50 ? '#ffd740' : '#69f0ae';
-  grad.addColorStop(0, beamColor); grad.addColorStop(1, 'transparent');
-  rctx.beginPath(); rctx.moveTo(rx, ry);
-  // Draw cone
-  const spread = 0.25;
-  rctx.arc(rx, ry, beamLen, angle - Math.PI/2 - spread, angle - Math.PI/2 + spread);
-  rctx.closePath(); rctx.fillStyle = beamColor+'22'; rctx.fill();
-  rctx.beginPath(); rctx.moveTo(rx, ry); rctx.lineTo(bx, by);
-  rctx.strokeStyle = beamColor; rctx.lineWidth = 2; rctx.stroke();
-
-  // Distance circles
-  [50, 100, 150].forEach((r, i) => {
-    rctx.beginPath(); rctx.arc(rx, ry, r, Math.PI, 2*Math.PI);
-    rctx.strokeStyle = ['#1a3a1a','#1a2a3a','#2a1a1a'][i]; rctx.lineWidth = 1; rctx.stroke();
-    rctx.fillStyle = '#6b7fa3'; rctx.font = '9px sans-serif'; rctx.textAlign='left';
-    rctx.fillText(`${Math.round(r/1.5)}cm`, rx+r+2, ry+3);
-  });
-
-  // Wheels
-  rctx.fillStyle = '#1a2a3a'; rctx.strokeStyle = '#4fc3f7'; rctx.lineWidth = 2;
-  [[-22,0],[22,0],[-22,30],[22,30]].forEach(([dx,dy]) => {
-    rctx.beginPath(); rctx.roundRect(rx+dx-6, ry+dy+10, 12, 20, 2); rctx.fill(); rctx.stroke();
-  });
-  // Body
-  rctx.fillStyle = '#0d2040'; rctx.strokeStyle = '#4fc3f7'; rctx.lineWidth = 2;
-  rctx.beginPath(); rctx.roundRect(rx-18, ry+10, 36, 38, 4); rctx.fill(); rctx.stroke();
-  // Arduino chip
-  rctx.fillStyle = '#1a3a1a'; rctx.strokeStyle = '#69f0ae'; rctx.lineWidth = 1;
-  rctx.beginPath(); rctx.roundRect(rx-8, ry+15, 16, 10, 2); rctx.fill(); rctx.stroke();
-  // Servo + sensor on top
-  rctx.fillStyle = '#ffd740'; rctx.beginPath(); rctx.arc(rx, ry+8, 6, 0, Math.PI*2); rctx.fill();
-  // Arrow direction
-  const arrowColor = robotState === 'stop' ? '#ff5252' : robotState === 'forward' ? '#69f0ae' : '#4fc3f7';
-  rctx.fillStyle = arrowColor; rctx.font = '18px sans-serif'; rctx.textAlign='center';
-  const arrows = {forward:'⬆',backward:'⬇',left:'⬅',right:'➡',stop:'■',scan:'🔄'};
-  rctx.fillText(arrows[robotState]||'⬆', rx, ry+52);
-}
-
-function drawServo() {
-  const W = servoCanvas.width, H = servoCanvas.height;
-  sctx.clearRect(0,0,W,H);
-  sctx.fillStyle = '#050a14'; sctx.fillRect(0,0,W,H);
-  const cx = W/2, cy = H - 20, r = H - 40;
-
-  // Arc background
-  sctx.beginPath(); sctx.arc(cx, cy, r, Math.PI, 2*Math.PI);
-  sctx.strokeStyle = '#1e2d47'; sctx.lineWidth = 30; sctx.stroke();
-
-  // Arc colored (0° = left = 180°servo, 180° = right = 0°servo)
-  const startA = Math.PI;
-  const progA = startA + (servoAngle / 180) * Math.PI;
-  sctx.beginPath(); sctx.arc(cx, cy, r, Math.PI, progA);
-  sctx.strokeStyle = '#4fc3f7'; sctx.lineWidth = 30; sctx.stroke();
-
-  // Needle
-  const needleA = Math.PI + (servoAngle/180)*Math.PI;
-  const nx = cx + (r) * Math.cos(needleA);
-  const ny = cy + (r) * Math.sin(needleA);
-  sctx.beginPath(); sctx.moveTo(cx,cy); sctx.lineTo(nx,ny);
-  sctx.strokeStyle = '#fff'; sctx.lineWidth = 3; sctx.stroke();
-  sctx.beginPath(); sctx.arc(cx,cy,8,0,Math.PI*2); sctx.fillStyle='#4fc3f7'; sctx.fill();
-
-  // Labels
-  sctx.fillStyle = '#6b7fa3'; sctx.font = '10px sans-serif'; sctx.textAlign='center';
-  sctx.fillText('0°', cx - r - 8, cy+4);
-  sctx.fillText('180°', cx + r + 10, cy+4);
-  sctx.fillText('90°', cx, cy - r - 8);
-  sctx.fillStyle = '#e0e8ff'; sctx.font = 'bold 18px sans-serif';
-  sctx.fillText(servoAngle + '°', cx, cy - 15);
-}
+const STATES = {
+  idle:     {icon:'⏸️', name:'IDLE',             desc:'Système en attente', color:'#4a6a4a', alert:null},
+  verif:    {icon:'🔍', name:'VÉRIFICATION',      desc:'Lecture MQ-3 alcool…', color:'#4a6a4a', alert:null},
+  autorise: {icon:'✅', name:'AUTORISÉ',           desc:'Alcool OK — Conduite normale', color:'#2dc653', alert:0},
+  bloque:   {icon:'🚫', name:'BLOQUÉ',             desc:'Alcool dépassé — Moteurs OFF', color:'#e53e3e', alert:null},
+  alerte1:  {icon:'⚡', name:'ALERTE 1',           desc:'Somnolence détectée — Bip court', color:'#f5a623', alert:1},
+  alerte2:  {icon:'🔔', name:'ALERTE 2',           desc:'Réaction absente 5s — Bip long', color:'#ed8936', alert:2},
+  alerte3:  {icon:'🚨', name:'ALERTE 3',           desc:'URGENCE — Sirène active', color:'#e53e3e', alert:3},
+  parking:  {icon:'🅿️', name:'PARKING AUTONOME',  desc:'Suivi ligne + arrêt sur RFID', color:'#4299e1', alert:null},
+};
+const SF_IDS    = ['sf-idle','sf-verif','sf-auto','sf-a1','sf-a2','sf-a3','sf-park'];
+const SF_STATES = ['idle','verif','autorise','alerte1','alerte2','alerte3','parking'];
+let currentState = 'autorise';
+let scenario = 'normal';
+let frame = 0;
+let alertTimer = 0;
 
 function setState(s) {
-  robotState = s;
-  const stateMap = {
-    forward: {icon:'⬆️', label:'AVANCE', sub:'Voie libre — Distance > 25 cm', ml:'FWD', mr:'FWD', mlc:'var(--green)', mrc:'var(--green)'},
-    left: {icon:'⬅️', label:'TOURNE GAUCHE', sub:'Obstacle détecté — évitement', ml:'BCK', mr:'FWD', mlc:'var(--red)', mrc:'var(--green)'},
-    right: {icon:'➡️', label:'TOURNE DROITE', sub:'Obstacle détecté — évitement', ml:'FWD', mr:'BCK', mlc:'var(--green)', mrc:'var(--red)'},
-    stop: {icon:'🛑', label:'ARRÊT', sub:'Obstacle trop proche — scan en cours', ml:'STP', mr:'STP', mlc:'var(--muted)', mrc:'var(--muted)'},
-    scan: {icon:'🔄', label:'SCAN', sub:'Balayage servo 30°→150°', ml:'STP', mr:'STP', mlc:'var(--muted)', mrc:'var(--muted)'},
-    backward: {icon:'⬇️', label:'RECULE', sub:'Dégagement obstacle', ml:'BCK', mr:'BCK', mlc:'var(--yellow)', mrc:'var(--yellow)'},
-  };
-  const m = stateMap[s] || stateMap.forward;
-  document.getElementById('state-icon').textContent = m.icon;
-  document.getElementById('state-label').textContent = m.label;
-  document.getElementById('state-sub').textContent = m.sub;
-  document.getElementById('ml-val').textContent = m.ml;
-  document.getElementById('ml-val').style.color = m.mlc;
-  document.getElementById('mr-val').textContent = m.mr;
-  document.getElementById('mr-val').style.color = m.mrc;
+  currentState = s;
+  const st = STATES[s];
+  document.getElementById('state-icon').textContent = st.icon;
+  document.getElementById('state-name').textContent = st.name;
+  document.getElementById('state-name').style.color = st.color;
+  document.getElementById('state-desc').textContent = st.desc;
+  const idx = SF_STATES.indexOf(s);
+  SF_IDS.forEach((id,i) => {
+    const el = document.getElementById(id);
+    el.className = 'sf-node';
+    if(i < idx) el.classList.add('done');
+    else if(i === idx) el.classList.add('active');
+  });
+  const aboxes = ['al0','al1','al2','al3'];
+  aboxes.forEach(id => document.getElementById(id).className = 'alert-box');
+  if(st.alert !== null) document.getElementById(aboxes[st.alert]).classList.add('active-'+st.alert);
+  const rfid = s === 'parking';
+  document.getElementById('rfid-status').textContent = rfid ? '✅ Zone détectée' : '❌ Hors zone';
+  document.getElementById('rfid-status').style.color = rfid ? 'var(--green)' : 'var(--muted)';
 }
 
-function updateSensors() {
-  const dc = distance < 25 ? 'var(--red)' : distance < 50 ? 'var(--yellow)' : 'var(--green)';
-  document.getElementById('dist-val').textContent = distance + ' cm';
-  document.getElementById('dist-val').style.color = dc;
-  document.getElementById('dist-bar').style.width = Math.min(100, distance/2)+'%';
-  document.getElementById('dist-bar').style.background = dc;
-  document.getElementById('servo-val').textContent = servoAngle + '°';
-  document.getElementById('servo-bar').style.width = (servoAngle/180*100)+'%';
-  lineVal = Math.random() > 0.8 ? Math.round(Math.random()*800+200) : Math.round(Math.random()*100);
-  document.getElementById('line-val').textContent = lineVal;
-  document.getElementById('line-bar').style.width = Math.min(100,lineVal/10)+'%';
-  const spd = document.getElementById('speed-slider').value;
-  document.getElementById('speed-val2').textContent = spd + '%';
-  document.getElementById('speed-bar').style.width = spd + '%';
-}
-
-function serialLog(msg, type='ok') {
+function serialLog(msg, cls) {
   const log = document.getElementById('serial-log');
-  const now = new Date().toLocaleTimeString('fr-FR',{hour12:false});
+  const t = new Date().toLocaleTimeString('fr',{hour12:false});
   const div = document.createElement('div');
-  div.className = 'sl ' + type;
-  div.textContent = `[${now}] ${msg}`;
+  div.className = cls;
+  div.textContent = `[${t}] ${msg}`;
   log.appendChild(div);
   log.scrollTop = log.scrollHeight;
-  if (log.children.length > 100) log.removeChild(log.firstChild);
+  if(log.children.length > 80) log.removeChild(log.children[0]);
 }
+function clearSerial() { document.getElementById('serial-log').innerHTML=''; }
 
-function clearSerial() { document.getElementById('serial-log').innerHTML = ''; }
+// Face canvas
+const fc = document.getElementById('faceCanvas');
+const fctx = fc.getContext('2d');
+function resizeFC() { fc.width = fc.parentElement.offsetWidth - 20; fc.height = 140; }
+resizeFC();
+window.addEventListener('resize', resizeFC);
 
-let tick = 0;
-let scanning = false;
-function simStep() {
-  tick++;
-  // Randomly vary distance
-  distance = Math.max(5, Math.min(200, distance + (Math.random()-0.45)*15));
-  distance = Math.round(distance);
-
-  if (scanning) {
-    servoAngle += scanDir * 8;
-    if (servoAngle >= 150) { scanDir = -1; }
-    if (servoAngle <= 30) { scanDir = 1; scanning = false; setState('forward'); }
-    setState('scan');
-    serialLog(`[SERVO] Angle=${servoAngle}° Dist=${distance}cm`, 'info');
-  } else if (distance < 15) {
-    setState('stop');
-    scanning = true;
-    serialLog(`[STOP] Obstacle proche=${distance}cm — scan`, 'warn');
-  } else if (distance < 25) {
-    const dir = Math.random() > 0.5 ? 'left' : 'right';
-    setState(dir);
-    serialLog(`[EVITE] Distance=${distance}cm → ${dir.toUpperCase()}`, 'warn');
-    genObstacles();
-  } else {
-    if (robotState !== 'forward') {
-      serialLog(`[OK] Voie libre (${distance}cm) → AVANCE`, 'ok');
-    }
-    setState('forward');
-    if (tick % 5 === 0) serialLog(`[LOOP] Dist=${distance}cm Servo=${servoAngle}° PWM=${document.getElementById('speed-slider').value}`, 'ok');
+function drawFace(ear, mar, poseAngle) {
+  const W = fc.width, H = fc.height;
+  fctx.clearRect(0,0,W,H);
+  fctx.fillStyle = '#050f05';
+  fctx.fillRect(0,0,W,H);
+  const cx = W/2, cy = H/2;
+  const headW = 50, headH = 65;
+  fctx.save();
+  fctx.translate(cx, cy);
+  fctx.rotate(poseAngle * Math.PI/180);
+  // Face outline
+  fctx.beginPath();
+  fctx.ellipse(0, 0, headW, headH, 0, 0, 2*Math.PI);
+  fctx.strokeStyle = '#2a4a2a'; fctx.lineWidth = 1; fctx.stroke();
+  // Mesh dots
+  fctx.fillStyle = '#1a3a1a';
+  for(let i=0;i<55;i++){
+    const a=(i/55)*2*Math.PI, r=headW*(0.4+0.6*Math.abs(Math.sin(i*1.9)));
+    fctx.beginPath(); fctx.arc(Math.cos(a)*r*0.8,Math.sin(a)*r*0.85,1,0,2*Math.PI); fctx.fill();
   }
-
-  drawRobot(); drawServo(); updateSensors();
+  // Eyes
+  const eyeY=-10, eyeOpen=Math.max(0.05, ear/0.4);
+  [-22, 22].forEach(ex => {
+    const eyeH = Math.max(1.5, 9*eyeOpen);
+    fctx.beginPath(); fctx.ellipse(ex,eyeY,11,eyeH,0,0,2*Math.PI);
+    fctx.strokeStyle='#2dc653'; fctx.lineWidth=1.5; fctx.stroke();
+    fctx.beginPath(); fctx.arc(ex,eyeY,2.5*eyeOpen,0,2*Math.PI);
+    fctx.fillStyle = eyeOpen<0.4?'#e53e3e':'#2dc653'; fctx.fill();
+  });
+  // Nose
+  fctx.beginPath(); fctx.moveTo(0,-5); fctx.lineTo(-4,14); fctx.lineTo(4,14);
+  fctx.strokeStyle='#2a4a2a'; fctx.lineWidth=1; fctx.stroke();
+  // Mouth
+  const mH = Math.max(1.5, 13*(mar/1.2));
+  fctx.beginPath(); fctx.ellipse(0,26,15,mH,0,0,2*Math.PI);
+  fctx.strokeStyle = mar>0.65?'#4299e1':'#2a5a2a'; fctx.lineWidth=1.5; fctx.stroke();
+  // Pose axis
+  fctx.beginPath(); fctx.moveTo(0,-headH+5); fctx.lineTo(0,-headH-12);
+  fctx.strokeStyle='#f5a623'; fctx.lineWidth=1.5; fctx.stroke();
+  fctx.restore();
+  fctx.fillStyle='#4a6a4a'; fctx.font='9px Courier New';
+  fctx.fillText('468 landmarks · 3D · MediaPipe', 4, H-4);
+  fctx.fillStyle='#f5a623';
+  fctx.fillText(`Pose: ${poseAngle.toFixed(1)}°`, W-80, H-4);
 }
 
-function toggleSim() { simRunning = !simRunning; if (simRunning) startSim(); else { clearInterval(simTimer); serialLog('[SIM] Pause','info'); } }
-function startSim() { simTimer = setInterval(simStep, 600); }
-
-document.getElementById('speed-slider').oninput = function() {
-  document.getElementById('speed-val').textContent = this.value+'%';
+const SC = {
+  normal:    { ear:()=>0.29+Math.sin(frame*.05)*.03+(Math.random()-.5)*.01, mar:()=>0.35+(Math.random()-.5)*.05, perclos:()=>Math.max(0,5+Math.sin(frame*.02)*3), pose:()=>Math.sin(frame*.04)*3, mq3:()=>200+Math.sin(frame*.1)*25 },
+  drowsy:    { ear:()=>Math.max(.10,0.26-(frame%120)/120*.15+(Math.random()-.5)*.02), mar:()=>0.45+Math.sin(frame*.08)*.1, perclos:()=>Math.min(60,frame%120<60?(frame%60)/60*52:52), pose:()=>Math.sin(frame*.03)*13, mq3:()=>180+Math.random()*20 },
+  alcohol:   { ear:()=>0.29+(Math.random()-.5)*.02, mar:()=>0.38+(Math.random()-.5)*.04, perclos:()=>10+Math.random()*5, pose:()=>Math.sin(frame*.04)*4, mq3:()=>430+Math.random()*60 },
+  emergency: { ear:()=>Math.max(.08,.20-(frame%70)/70*.13), mar:()=>0.55+Math.random()*.1, perclos:()=>Math.min(72,frame*1.3), pose:()=>Math.min(20,frame*.32), mq3:()=>210+Math.random()*15 },
 };
 
+function setScenario(s) {
+  scenario = s; frame = 0; alertTimer = 0;
+  clearSerial();
+  serialLog(`[SIM] Scénario: ${s.toUpperCase()}`, 'sl-info');
+  if(s==='normal') {
+    setState('verif');
+    serialLog('[UART] {"mq3":205,"rfid":false,"btn":false,"mot":true}','sl-ok');
+    setTimeout(()=>{ setState('autorise'); serialLog('[CMD] CMD:AUTORISER → Démarrage autorisé','sl-cmd'); },1500);
+  } else if(s==='alcohol') {
+    setState('verif');
+    serialLog('[UART] {"mq3":455,"rfid":false,"btn":false,"mot":false}','sl-warn');
+    setTimeout(()=>{ setState('bloque'); serialLog('[CMD] CMD:BLOQUER → Moteurs OFF, LED rouge','sl-err'); },2000);
+  } else if(s==='drowsy') {
+    setState('autorise');
+    serialLog('[UART] {"mq3":200,"rfid":false,"btn":false,"mot":true}','sl-ok');
+    serialLog('[RPi] Surveillance somnolence active…','sl-info');
+  } else if(s==='emergency') {
+    setState('autorise');
+    serialLog('[WARN] PERCLOS en hausse — surveillance renforcée','sl-warn');
+  }
+}
+
+function updateBar(id, val, thresh, max, fmt) {
+  const over = (id==='perclos-val'||id==='pose-val') ? val>thresh : val<thresh;
+  const pct = Math.min(100,(val/max)*100);
+  const col = over ? 'var(--red)' : (Math.abs(val-thresh)/thresh < .15 ? 'var(--yellow)' : 'var(--green)');
+  document.getElementById(id).textContent = fmt(val);
+  document.getElementById(id).style.color = col;
+  document.getElementById(id.replace('-val','-bar')).style.width = pct+'%';
+  document.getElementById(id.replace('-val','-bar')).style.background = col;
+}
+
+function simStep() {
+  frame++;
+  const sc = SC[scenario];
+  const ear=sc.ear(), mar=sc.mar(), perclos=sc.perclos(), pose=Math.abs(sc.pose()), mq3=sc.mq3();
+  updateBar('ear-val',     ear,     .261, .45,  v=>v.toFixed(3));
+  updateBar('mar-val',     mar,     .65,  1.2,  v=>v.toFixed(2));
+  updateBar('perclos-val', perclos, 35,   100,  v=>Math.round(v)+'%');
+  updateBar('pose-val',    pose,    20,   45,   v=>v.toFixed(0)+'°');
+  document.getElementById('mq3-val').textContent = Math.round(mq3);
+  document.getElementById('mq3-bar').style.width = Math.min(100,mq3/10)+'%';
+  document.getElementById('mq3-bar').style.background = mq3>400?'var(--red)':'var(--green)';
+  document.getElementById('mq3-val').style.color = mq3>400?'var(--red)':'var(--green)';
+  drawFace(ear, mar, sc.pose());
+
+  if(scenario==='drowsy') {
+    const drowsy = ear<.261 && perclos>18;
+    if(drowsy && currentState==='autorise') {
+      setState('alerte1');
+      serialLog('[CMD] CMD:ALERTE:1 → Bip court, LED jaune','sl-warn');
+      serialLog(`[RPi] EAR=${ear.toFixed(3)} < 0.261 — 20 frames consécutives','sl-warn`,'sl-warn');
+    } else if(!drowsy && (currentState==='alerte1'||currentState==='alerte2')) {
+      setState('autorise');
+      serialLog('[CMD] CMD:AUTORISER — Conducteur réveillé ✓','sl-cmd');
+    }
+  }
+  if(scenario==='emergency') {
+    alertTimer++;
+    if(alertTimer===50) { setState('alerte1'); serialLog('[CMD] CMD:ALERTE:1 — EAR<0.261, 20 frames','sl-warn'); }
+    if(alertTimer===110){ setState('alerte2'); serialLog('[CMD] CMD:ALERTE:2 — 5s sans réaction','sl-err'); }
+    if(alertTimer===170){ setState('alerte3'); serialLog('[CMD] CMD:ALERTE:3 — URGENCE SIRÈNE 🚨','sl-err'); }
+    if(alertTimer===230){ setState('parking'); serialLog('[CMD] CMD:PARKING — Suivi ligne TCRT5000','sl-cmd'); }
+    if(alertTimer===280){ serialLog('[UART] {"mq3":208,"rfid":true} — RFID détecté! Arrêt zone parking','sl-ok'); serialLog('[CMD] CMD:RESET','sl-cmd'); alertTimer=0; setTimeout(()=>setScenario('normal'),2000); }
+  }
+  if(frame%40===0 && scenario==='normal') serialLog(`[UART] {"mq3":${Math.round(mq3)},"rfid":false,"btn":false,"mot":true}`,'sl-ok');
+  if(frame%85===0 && scenario==='normal') serialLog(`[RPi] EAR=${ear.toFixed(3)} MAR=${mar.toFixed(2)} PERCLOS=${perclos.toFixed(0)}% → Niveau 0`,'sl-info');
+}
+
 // Init
-serialLog('[INIT] Arduino Uno démarré','info');
-serialLog('[INIT] HC-SR04 OK | Servo OK | L298N OK | TCRT5000 OK','ok');
-serialLog('[LOOP] Démarrage simulation...','info');
-drawRobot(); drawServo(); updateSensors();
-startSim();
+serialLog('[INIT] Raspberry Pi — Sécurité active démarrée','sl-ok');
+serialLog('[INIT] MediaPipe Face Mesh chargé — face_landmarker.task (~5 Mo)','sl-ok');
+serialLog('[INIT] Calibration EAR — 30 frames…','sl-info');
+setTimeout(()=>serialLog('[INIT] Calibration OK — seuil adaptatif: 0.261','sl-ok'),700);
+setTimeout(()=>serialLog('[UART] Connexion Arduino Mega 2560 — /dev/ttyAMA0 9600 baud','sl-ok'),1300);
+setTimeout(()=>{ setState('verif'); serialLog('[VERIF] Lecture MQ-3…','sl-info'); },1800);
+setTimeout(()=>{ setState('autorise'); serialLog('[CMD] CMD:AUTORISER → Moteurs ON, LED verte','sl-cmd'); },2400);
+setInterval(simStep, 80);
 </script>
 </body>
 </html>
