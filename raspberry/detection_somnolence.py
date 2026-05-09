@@ -87,7 +87,7 @@ ANGLE_ROULIS_MAX  = 20      # Degrés inclinaison latérale max (solvePnP)
 ANGLE_TANGAGE_MAX = 15      # Degrés inclinaison avant/arrière max (solvePnP)
 
 DELAI_NV2         = 4.0   # Secondes niveau 1 → niveau 2  [demo: ALERTE2_MS=4000]
-DELAI_NV3         = 3.5   # Secondes niveau 2 → niveau 3  [demo: ALERTE3_MS=3500]
+DELAI_NV3         = 4.0   # Secondes niveau 2 → niveau 3  [demo: ALERTE3_MS=4000]
 POST_CALIB_GRACE  = 3.0   # Secondes de grâce post-calibration (buffers vides) [demo: 3000ms]
 CALIB_FRAMES      = 150   # Frames de calibration (~5 s à 30 fps)  [demo: 150]
 
