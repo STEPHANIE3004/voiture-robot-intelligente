@@ -58,6 +58,7 @@ class Etat(Enum):
 class VoitureSecurisee:
 
     DUREE_VERIF_ALCOOL = 3.0    # Secondes de lecture MQ-3
+    DUREE_BLOCAGE_S    = 1800   # 30 min — norme EAD EN 50436 (blocage après test positif)
 
     def __init__(self, port: str, camera_id: int, debug: bool, simuler: bool):
         self.debug   = debug
@@ -149,8 +150,32 @@ class VoitureSecurisee:
             self._goto(Etat.ALERTE_2)
 
     def _bloque(self):
-        if not self.serial.alcool_detecte():
-            logger.info("Alcool OK → re-vérification")
+        """
+        Bloque le démarrage pendant DUREE_BLOCAGE_S (30 min — norme EAD EN 50436).
+        Après le délai, force un nouveau test alcool (VERIFICATION) si l'alcool a
+        disparu, ou prolonge le blocage de 30 min supplémentaires s'il est encore présent.
+        Avant expiration du délai : aucune action (le système reste verrouillé).
+        """
+        if self._duree() < self.DUREE_BLOCAGE_S:
+            # Toujours en période de blocage — afficher la progression toutes les 5 min
+            elapsed = int(self._duree())
+            if elapsed > 0 and elapsed % 300 == 0:
+                restant = int((self.DUREE_BLOCAGE_S - elapsed) / 60)
+                logger.info(f"Blocage EAD actif — {restant} min restantes")
+            return
+
+        # Délai écoulé : tester l'alcool à nouveau
+        if self.serial.alcool_detecte():
+            logger.warning(
+                f"Alcool encore détecté (MQ-3={self.serial.mq3}) — "
+                f"blocage prolongé 30 min supplémentaires"
+            )
+            self._ts = time.time()   # Repart pour 30 min
+        else:
+            logger.info(
+                f"Délai EAD écoulé + alcool OK (MQ-3={self.serial.mq3}) → "
+                f"re-vérification autorisée"
+            )
             self._goto(Etat.VERIFICATION)
 
     def _alerte_1(self, niv: int):
@@ -158,7 +183,7 @@ class VoitureSecurisee:
             logger.info("Conducteur réveillé → retour normal")
             self.serial.envoyer("CMD:AUTORISER")
             self._goto(Etat.AUTORISE)
-        elif self._duree() >= 5.0:
+        elif self._duree() >= 4.0:   # 4 s — synchronisé avec demo.html ALERTE2_MS=4000
             logger.warning("Pas de réaction → niveau 2")
             self.serial.envoyer("CMD:ALERTE:2")
             self._goto(Etat.ALERTE_2)
@@ -168,7 +193,7 @@ class VoitureSecurisee:
             logger.info("Conducteur réveillé → retour normal")
             self.serial.envoyer("CMD:AUTORISER")
             self._goto(Etat.AUTORISE)
-        elif self._duree() >= 3.0:   # 3 s — synchronisé avec demo.html ALERTE3_MS=3000
+        elif self._duree() >= 3.5:   # 3.5 s — synchronisé avec demo.html ALERTE3_MS=3500
             logger.critical("URGENCE — parking autonome activé")
             self.serial.envoyer("CMD:ALERTE:3")
             time.sleep(1)

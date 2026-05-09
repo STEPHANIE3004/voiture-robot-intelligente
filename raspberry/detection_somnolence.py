@@ -86,9 +86,10 @@ HEAD_THR_OFFSET   = 0.08    # Offset calibration HEAD pitch [demo: +0.08]
 ANGLE_ROULIS_MAX  = 20      # Degrés inclinaison latérale max (solvePnP)
 ANGLE_TANGAGE_MAX = 15      # Degrés inclinaison avant/arrière max (solvePnP)
 
-DELAI_NV2   = 5.0           # Secondes niveau 1 → niveau 2  [demo: ALERTE2_MS=5000]
-DELAI_NV3   = 3.0           # Secondes niveau 2 → niveau 3  [demo: ALERTE3_MS=3000]
-CALIB_FRAMES = 150          # Frames de calibration (~5 s à 30 fps)  [demo: 150]
+DELAI_NV2         = 4.0   # Secondes niveau 1 → niveau 2  [demo: ALERTE2_MS=4000]
+DELAI_NV3         = 3.5   # Secondes niveau 2 → niveau 3  [demo: ALERTE3_MS=3500]
+POST_CALIB_GRACE  = 3.0   # Secondes de grâce post-calibration (buffers vides) [demo: 3000ms]
+CALIB_FRAMES      = 150   # Frames de calibration (~5 s à 30 fps)  [demo: 150]
 
 
 # ── Fonctions utilitaires ────────────────────────────────────────────────────
@@ -226,6 +227,9 @@ class DetecteurSomnolence:
         self.compteur_mar = 0
         self.fenetre_perclos = []
 
+        # Période de grâce post-calibration
+        self.calibre_a = None   # timestamp fin calibration
+
         # Horodatages niveaux
         self.ts_nv1 = None
         self.ts_nv2 = None
@@ -353,7 +357,12 @@ class DetecteurSomnolence:
                 f"HEAD baseline={mean_head:.3f} → seuil={self.head_seuil}"
             )
 
-        self.calibre = True
+        self.calibre   = True
+        self.calibre_a = time.time()
+        # Pré-remplir le buffer PERCLOS avec des "yeux ouverts" pour éviter
+        # un pic PERCLOS=100% dès le 1er clignement après calibration
+        self.fenetre_perclos = [False] * PERCLOS_FENETRE
+        self.compteur_ear    = 0
         return self.ear_seuil
 
     # ── Blink rate ────────────────────────────────────────────────────────────
@@ -388,6 +397,13 @@ class DetecteurSomnolence:
         Signal combiné : EAR OU PERCLOS OU HEAD OU BLINK RATE OU (MAR+HEAD).
         """
         now = time.time()
+
+        # Période de grâce post-calibration — buffers pas encore stables
+        if self.calibre_a and (now - self.calibre_a) < POST_CALIB_GRACE:
+            self.compteur_ear = 0
+            self.ts_nv1       = None
+            self.niveau       = 0
+            # PERCLOS continue de se remplir mais les alertes restent suspendues
 
         # PERCLOS
         self.fenetre_perclos.append(yeux_fermes)
