@@ -660,16 +660,18 @@ import { FaceLandmarker, FilesetResolver, DrawingUtils }
 /* ── CONSTANTS ── */
 const L_EYE=[33,160,158,133,153,144], R_EYE=[362,385,387,263,373,380];
 const MAR_THR=0.65, PERCLOS_WIN=60, PERCLOS_ALERT=30, BLINK_LOW=10;
-const FAT_FRAMES=40, ALERTE2_MS=4000, ALERTE3_MS=3500, CALIB_FRAMES=150;
-// FAT_FRAMES  : 40 frames (~1.3 s à 30fps) — standard académique EAR (arXiv 2408.05836)
-// ALERTE2_MS  : 4 s sans récupération en Alerte 1 → Alerte 2  (seuil ADAS Bosch/Valeo)
-// ALERTE3_MS  : 3.5 s sans récupération en Alerte 2 → Alerte 3 (microsommeil dangereux)
+const FAT_FRAMES=40, ALERTE2_MS=4000, ALERTE3_MS=4000, CALIB_FRAMES=150;
+const ALERTE3_HOLD_MS=1300; // durée d'affichage Alerte 3 avant lancement autopilot (~40 frames)
+// FAT_FRAMES     : 40 frames (~1.3 s à 30fps) — standard académique EAR (arXiv 2408.05836)
+// ALERTE2_MS     : 4 s sans récupération en Alerte 1 → Alerte 2  (seuil ADAS Bosch/Valeo)
+// ALERTE3_MS     : 4 s sans récupération en Alerte 2 → Alerte 3  (même durée qu'Alerte 1→2)
+// ALERTE3_HOLD_MS: 1.3 s d'affichage Alerte 3 avant pilotage automatique (pas de récupération)
 const POST_CALIB_GRACE_MS = 3000; // 3 s de stabilisation après calibration (buffers vides)
 let EAR_THR=0.261, HEAD_THR=0.310;
 
 /* ── STATE ── */
 let state='init', fatigueFrames=0, recovCount=0, yawnCount=0, parkCount=0;
-let alerte1Start=0, alerte2Start=0, inYawn=false, alcoholOn=false;
+let alerte1Start=0, alerte2Start=0, alerte3Start=0, inYawn=false, alcoholOn=false;
 let perclosBuffer=[], frameN=0, lastVideoTime=-1, running=false;
 let landmarker=null, drawUtils=null, parkLoopRunning=false;
 let calibData=[], calibDone=false, earBaseline=0, headBaseline=0;
@@ -1062,17 +1064,18 @@ function processAlerts(eyeDown,headDown,mar,perclos,now){
     return;
   }
   if(state==='alerte1'){
-    if(!fatigued&&!percCrit){recovCount++;log('Récupération → Normal','info');setState('autorise');fatigueFrames=0;document.getElementById('aF1').style.width='0%';document.getElementById('aF2').style.width='0%';return}
+    // Récupération : yeux ouverts → retour normal (PERCLOS non testé — buffer lent à se vider)
+    if(!fatigued){recovCount++;log('Conducteur réveillé → retour conduite normale','info');setState('autorise');fatigueFrames=0;document.getElementById('aF1').style.width='0%';document.getElementById('aF2').style.width='0%';return}
     const el=now-alerte1Start;
     document.getElementById('aF2').style.width=Math.min(100,el/ALERTE2_MS*100)+'%';
     if(el>ALERTE2_MS){log('Pas de récupération → Alerte 2','err');setState('alerte2');alerte2Start=now}
     return;
   }
   if(state==='alerte2'){
-    // Récupération possible depuis Alerte 2 si la personne se réveille
-    if(!fatigued&&!percCrit){
+    // Récupération possible : yeux ouverts → retour normal (même logique qu'Alerte 1)
+    if(!fatigued){
       recovCount++;
-      log('Récupération depuis Alerte 2 → Conduite normale','info');
+      log('Conducteur réveillé depuis Alerte 2 → retour conduite normale','info');
       setState('autorise');
       fatigueFrames=0;
       ['aF1','aF2','aF3'].forEach(id=>document.getElementById(id).style.width='0%');
@@ -1080,7 +1083,13 @@ function processAlerts(eyeDown,headDown,mar,perclos,now){
     }
     const el=now-alerte2Start;
     document.getElementById('aF3').style.width=Math.min(100,el/ALERTE3_MS*100)+'%';
-    if(el>ALERTE3_MS){log('Seuil critique → Alerte 3 + pilotage autonome','err');setState('alerte3');triggerParking()}
+    if(el>ALERTE3_MS){log('Seuil critique → Alerte 3','err');setState('alerte3');alerte3Start=now;}
+    return;
+  }
+  if(state==='alerte3'){
+    // Alerte 3 : affichage ~1.3 s puis pilotage automatique (aucune récupération possible)
+    const el=now-alerte3Start;
+    if(el>ALERTE3_HOLD_MS){log('Pilotage autonome engagé','err');triggerParking();}
     return;
   }
 }
@@ -1302,18 +1311,4 @@ function log(msg,type='info'){
 }
 
 /* ── LOG AUTOPILOT ── */
-function logAp(msg,type='info'){
-  const box=document.getElementById('apLogBox');
-  const ts=new Date().toLocaleTimeString('fr-FR',{hour12:false});
-  const div=document.createElement('div');div.className='le';
-  const cls={info:'linfo',warn:'lwarn',err:'lerr',rfid:'lrfid',calib:'lcal'}[type]||'linfo';
-  div.innerHTML=`<span class="lts">${ts}</span><span class="${cls}">${msg}</span>`;
-  box.appendChild(div); box.scrollTop=box.scrollHeight;
-}
-
-/* ══ BOOT ══ */
-drawParking();
-</script>
-</body>
-</html>
-                                                                                                            
+function logAp(msg,type='
