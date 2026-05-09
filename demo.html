@@ -66,21 +66,43 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:12
 /* ════ BLOCKED SCREEN ════ */
 #blockedScreen{display:none}
 .blocked-card{background:var(--surface);border:1.5px solid var(--red);border-radius:16px;
-  padding:40px;width:480px;text-align:center;box-shadow:0 0 60px #ef444420}
-.blocked-icon{font-size:64px;margin-bottom:16px;animation:pulse-red 1.5s infinite}
+  padding:32px 40px;width:500px;text-align:center;box-shadow:0 0 60px #ef444420}
+.blocked-icon{font-size:56px;margin-bottom:12px;animation:pulse-red 1.5s infinite}
 @keyframes pulse-red{0%,100%{filter:drop-shadow(0 0 8px #ef4444)}50%{filter:drop-shadow(0 0 24px #ef4444)}}
-.blocked-card h2{font-size:22px;font-weight:800;color:#ef4444;letter-spacing:-.3px;margin-bottom:6px}
-.blocked-card .blk-sub{font-size:13px;color:var(--text2);margin-bottom:20px}
-.sensor-readout{background:#120008;border:1px solid #ef444440;border-radius:8px;padding:14px 16px;margin-bottom:20px}
-.sr-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #1a000a}
+.blocked-card h2{font-size:20px;font-weight:800;color:#ef4444;letter-spacing:-.3px;margin-bottom:4px}
+.blocked-card .blk-sub{font-size:12px;color:var(--text2);margin-bottom:14px}
+.sensor-readout{background:#120008;border:1px solid #ef444440;border-radius:8px;padding:12px 14px;margin-bottom:12px}
+.sr-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #1a000a}
 .sr-row:last-child{border-bottom:none}
 .sr-label{font-size:11px;color:var(--text2)}
 .sr-val{font-family:var(--mono);font-size:12px;font-weight:700;color:#ef4444}
 .sr-val.warn{color:var(--yellow)}
-.blk-msg{font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:20px;padding:12px;background:var(--surface2);border-radius:8px}
-.back-btn{padding:11px 24px;border-radius:8px;border:1.5px solid var(--border);background:transparent;
-  color:var(--text2);font-family:var(--sans);font-size:12px;cursor:pointer;transition:all .2s}
-.back-btn:hover{border-color:var(--cyan);color:var(--cyan)}
+/* Estimation élimination */
+.elim-box{background:#0a0014;border:1px solid #4a1d9640;border-radius:8px;padding:10px 14px;margin-bottom:12px;text-align:left}
+.elim-title{font-size:9px;font-weight:600;color:var(--purple);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.elim-row{display:flex;justify-content:space-between;font-size:10px;padding:2px 0}
+.elim-lbl{color:var(--text2)}.elim-val{font-family:var(--mono);color:var(--yellow);font-weight:600}
+.elim-note{font-size:9px;color:var(--muted);margin-top:5px;line-height:1.4;border-top:1px solid #1a002a;padding-top:5px}
+/* Countdown */
+.cdown-wrap{background:#0e0018;border:1px solid #ef444440;border-radius:10px;padding:12px 14px;margin-bottom:12px}
+.cdown-label{font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.cdown-timer{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px}
+.cdown-num{font-family:var(--mono);font-size:28px;font-weight:700;color:#ef4444;min-width:52px}
+.cdown-txt{font-size:10px;color:var(--text2);line-height:1.4;text-align:left}
+.cdown-track{background:var(--border2);border-radius:4px;height:4px;overflow:hidden}
+.cdown-fill{height:100%;background:linear-gradient(90deg,#ef4444,#f97316);border-radius:4px;transition:width .5s linear;width:100%}
+.cdown-sim{font-size:8.5px;color:var(--muted);margin-top:5px}
+/* Retest button */
+.retest-btn{width:100%;padding:12px;border-radius:10px;border:none;
+  background:linear-gradient(135deg,#7c3aed,#8b5cf6);color:#fff;
+  font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;
+  letter-spacing:.03em;transition:all .2s;box-shadow:0 4px 20px #8b5cf630;
+  display:none;margin-bottom:8px}
+.retest-btn:hover{box-shadow:0 6px 28px #8b5cf660;transform:translateY(-1px)}
+.retest-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+.restart-link{font-size:10px;color:var(--muted);cursor:pointer;text-decoration:underline;
+  text-underline-offset:3px;transition:color .2s;background:none;border:none;font-family:var(--sans)}
+.restart-link:hover{color:var(--text2)}
 
 /* ════ TOPBAR ════ */
 .topbar{background:var(--surface);border-bottom:1px solid var(--border);
@@ -101,8 +123,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:12
 /* ════ LEFT ════ */
 .left{display:flex;flex-direction:column;width:56%;border-right:1px solid var(--border)}
 .vcont{position:relative;flex:1;overflow:hidden;background:#000;display:flex;align-items:center;justify-content:center}
-#video{width:100%;height:100%;object-fit:cover;display:block;transform:scaleX(-1)}
-#overlay{position:absolute;inset:0;width:100%;height:100%;transform:scaleX(-1)}
+#video{width:100%;height:100%;object-fit:cover;display:block}
+#overlay{position:absolute;inset:0;width:100%;height:100%}
 .init-msg{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;pointer-events:none}
 .spinner{width:36px;height:36px;border:2px solid var(--border);border-top-color:var(--cyan);border-radius:50%;animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -227,6 +249,42 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:12
 
 /* ════ PARKING ════ */
 #parkingCanvas{display:block;width:100%;border-radius:0 0 0 0}
+
+/* ════ AUTOPILOT OVERLAY ════ */
+#autopilotOverlay{position:fixed;inset:0;z-index:500;background:var(--bg);display:none;flex-direction:column;overflow:hidden}
+#autopilotOverlay.show{display:flex}
+.ap-topbar{background:#0c0018;border-bottom:2px solid #8b5cf640;padding:10px 20px;
+  display:flex;align-items:center;gap:14px;flex-shrink:0;box-shadow:0 0 30px #8b5cf618}
+.ap-topbar-icon{font-size:26px;animation:pulse-purple 1.4s infinite}
+@keyframes pulse-purple{0%,100%{filter:drop-shadow(0 0 6px #8b5cf6)}50%{filter:drop-shadow(0 0 20px #a78bfa)}}
+.ap-topbar-title{font-size:16px;font-weight:800;color:#a78bfa;letter-spacing:-.3px}
+.ap-topbar-sub{font-size:10px;color:var(--text2);margin-top:1px}
+.ap-alert-chip{margin-left:auto;font-size:9px;padding:4px 10px;border-radius:20px;
+  border:1px solid #ef444450;color:#ef4444;background:#ef444412;animation:blink .8s infinite;font-weight:700}
+.ap-body{flex:1;display:flex;overflow:hidden}
+.ap-main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:20px 24px;gap:14px;overflow:hidden}
+.ap-canvas-card{background:var(--surface);border:1px solid #8b5cf640;border-radius:12px;
+  overflow:hidden;width:100%;max-width:820px;box-shadow:0 0 40px #8b5cf612}
+.ap-canvas-hdr{padding:8px 14px;border-bottom:1px solid #8b5cf622;
+  display:flex;align-items:center;gap:8px;font-size:9px;font-weight:600;
+  text-transform:uppercase;letter-spacing:.1em;color:var(--purple)}
+.ap-canvas-dot{width:6px;height:6px;border-radius:50%;background:var(--purple);animation:blink 1s infinite}
+#apParkCanvas{display:block;width:100%;border-radius:0 0 10px 10px}
+.ap-status-row{width:100%;max-width:820px;background:var(--surface);border:1px solid #8b5cf628;
+  border-radius:8px;padding:8px 14px;display:flex;align-items:center;gap:9px;font-size:10px}
+#apStatusText{color:var(--text2);flex:1}
+.ap-done-card{display:none;width:100%;max-width:820px;background:#001a10;
+  border:1px solid #00c89650;border-radius:12px;padding:16px 20px;text-align:center}
+.ap-done-card.show{display:block}
+.ap-done-title{font-size:15px;font-weight:800;color:var(--green);margin-bottom:6px}
+.ap-done-note{font-size:10px;color:var(--text2);line-height:1.7}
+.ap-side{width:252px;border-left:1px solid var(--border);display:flex;flex-direction:column;background:var(--surface);flex-shrink:0}
+.ap-side-hdr{padding:8px 12px;border-bottom:1px solid var(--border);font-size:9px;
+  font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text2)}
+.ap-logbox{flex:1;overflow-y:auto;padding:5px 8px;display:flex;flex-direction:column;gap:1px}
+.ap-logbox::-webkit-scrollbar{width:3px}
+.ap-logbox::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 .rst-btn{display:none;width:calc(100% - 24px);margin:7px 12px;padding:8px;border-radius:8px;
   border:1px solid var(--border);background:transparent;color:var(--text2);
   font-family:var(--sans);font-size:11px;cursor:pointer;transition:all .2s;font-weight:500}
@@ -277,7 +335,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:12
   <div class="blocked-card">
     <div class="blocked-icon">🚫</div>
     <h2>Démarrage impossible</h2>
-    <p class="blk-sub">Taux d'alcoolémie élevé détecté au démarrage</p>
+    <p class="blk-sub">Taux d'alcoolémie supérieur au seuil légal — véhicule verrouillé</p>
 
     <div class="sensor-readout">
       <div class="sr-row">
@@ -289,7 +347,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:12
         <span class="sr-val">0.87 g/L</span>
       </div>
       <div class="sr-row">
-        <span class="sr-label">Seuil légal</span>
+        <span class="sr-label">Seuil légal (France)</span>
         <span class="sr-val warn">0.50 g/L</span>
       </div>
       <div class="sr-row">
@@ -298,12 +356,37 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:12
       </div>
     </div>
 
-    <div class="blk-msg">
-      Le système de sécurité a détecté un taux d'alcool supérieur à la limite légale (0.5 g/L).<br><br>
-      Le véhicule est <strong style="color:#ef4444">verrouillé</strong>. Veuillez confier les clés à une personne sobre ou attendre la décroissance naturelle du taux d'alcoolémie.
+    <!-- Estimation temps d'élimination (base médicale) -->
+    <div class="elim-box">
+      <div class="elim-title">⏱ Temps d'élimination estimé — base médicale</div>
+      <div class="elim-row">
+        <span class="elim-lbl">À éliminer (0.87 → 0.50 g/L)</span>
+        <span class="elim-val">0.37 g/L</span>
+      </div>
+      <div class="elim-row">
+        <span class="elim-lbl">Homme (0.10–0.15 g/L/h)</span>
+        <span class="elim-val">2h28 – 3h42</span>
+      </div>
+      <div class="elim-row">
+        <span class="elim-lbl">Femme (0.085–0.10 g/L/h)</span>
+        <span class="elim-val">3h42 – 4h21</span>
+      </div>
+      <div class="elim-note">Le foie élimine l'alcool à vitesse constante — aucun moyen d'accélérer ce processus (café, eau, sport : inefficaces). Source : Sécurité Routière France.</div>
     </div>
 
-    <button class="back-btn" onclick="goBack()">← Retour à l'écran de démarrage</button>
+    <!-- Countdown EAD — norme EN 50436 -->
+    <div class="cdown-wrap">
+      <div class="cdown-label">🔒 Blocage système — Norme EAD EN 50436</div>
+      <div class="cdown-timer">
+        <div class="cdown-num" id="cdownNum">30</div>
+        <div class="cdown-txt">Retest possible<br>dans <span id="cdownSec">30</span> secondes</div>
+      </div>
+      <div class="cdown-track"><div class="cdown-fill" id="cdownFill"></div></div>
+      <div class="cdown-sim">Simulation accélérée · 30 s = 30 min réel (norme EN 50436 : blocage 30 min après test positif)</div>
+    </div>
+
+    <button class="retest-btn" id="retestBtn" onclick="retestAlcool()">🫁 Souffler à nouveau dans le capteur</button>
+    <button class="restart-link" onclick="goBack()">↺ Recommencer la simulation depuis le début</button>
   </div>
 </div>
 
@@ -532,6 +615,45 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:12
   </div><!-- /right -->
 </div><!-- /main -->
 
+<!-- ══════════ AUTOPILOT OVERLAY ══════════ -->
+<div id="autopilotOverlay">
+  <div class="ap-topbar">
+    <div class="ap-topbar-icon">🤖</div>
+    <div>
+      <div class="ap-topbar-title">Mode Pilotage Automatique Engagé</div>
+      <div class="ap-topbar-sub">Somnolence critique détectée · Conduite humaine suspendue · Stationnement RFID en cours</div>
+    </div>
+    <div class="ap-alert-chip">🚨 ALERTE NIV.3</div>
+  </div>
+  <div class="ap-body">
+    <div class="ap-main">
+      <div class="ap-canvas-card">
+        <div class="ap-canvas-hdr">
+          <div class="ap-canvas-dot"></div>
+          Vue aérienne — Recherche RFID &amp; Stationnement autonome
+        </div>
+        <canvas id="apParkCanvas" height="300"></canvas>
+      </div>
+      <div class="ap-status-row" id="apStatusRow">
+        <span style="font-size:15px">🔄</span>
+        <span id="apStatusText">Initialisation pilotage autonome…</span>
+      </div>
+      <div class="ap-done-card" id="apDoneCard">
+        <div class="ap-done-title">✅ Stationnement autonome réussi</div>
+        <div class="ap-done-note">
+          Le véhicule est garé en sécurité.<br>
+          <strong style="color:var(--text)">Système arrêté.</strong><br>
+          Rechargez la page pour démarrer une nouvelle session et refaire le test en temps réel.
+        </div>
+      </div>
+    </div>
+    <div class="ap-side">
+      <div class="ap-side-hdr">Journal système</div>
+      <div class="ap-logbox" id="apLogBox"></div>
+    </div>
+  </div>
+</div>
+
 <script type="module">
 import { FaceLandmarker, FilesetResolver, DrawingUtils }
   from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/vision_bundle.mjs";
@@ -539,7 +661,11 @@ import { FaceLandmarker, FilesetResolver, DrawingUtils }
 /* ── CONSTANTS ── */
 const L_EYE=[33,160,158,133,153,144], R_EYE=[362,385,387,263,373,380];
 const MAR_THR=0.65, PERCLOS_WIN=60, PERCLOS_ALERT=30, BLINK_LOW=10;
-const FAT_FRAMES=40, ALERTE2_MS=5000, ALERTE3_MS=3000, CALIB_FRAMES=150;
+const FAT_FRAMES=40, ALERTE2_MS=4000, ALERTE3_MS=3500, CALIB_FRAMES=150;
+// FAT_FRAMES  : 40 frames (~1.3 s à 30fps) — standard académique EAR (arXiv 2408.05836)
+// ALERTE2_MS  : 4 s sans récupération en Alerte 1 → Alerte 2  (seuil ADAS Bosch/Valeo)
+// ALERTE3_MS  : 3.5 s sans récupération en Alerte 2 → Alerte 3 (microsommeil dangereux)
+const POST_CALIB_GRACE_MS = 3000; // 3 s de stabilisation après calibration (buffers vides)
 let EAR_THR=0.261, HEAD_THR=0.310;
 
 /* ── STATE ── */
@@ -549,6 +675,7 @@ let perclosBuffer=[], frameN=0, lastVideoTime=-1, running=false;
 let landmarker=null, drawUtils=null, parkLoopRunning=false;
 let calibData=[], calibDone=false, earBaseline=0, headBaseline=0;
 let prevEarBelow=false, blinkTimestamps=[], blinkRate=0;
+let calibDoneAt=0; // timestamp fin calibration (pour période de grâce)
 
 /* ── DOM ── */
 const video=document.getElementById('video');
@@ -557,23 +684,74 @@ const ctx=overlay.getContext('2d');
 
 /* ── STARTUP ── */
 let alcoChoice='normal';
+let countdownTimer=null;
+const COUNTDOWN_SECONDS=30; // 30 s sim = 30 min réel (norme EN 50436)
+
 window.selectAlco=function(c){
   alcoChoice=c;
   document.getElementById('btnNormal').className='choice'+(c==='normal'?' ok':'');
   document.getElementById('btnAlco').className='choice'+(c==='alco'?' err':'');
 };
+
 window.startDemo=function(){
   alcoholOn=(alcoChoice==='alco');
   if(alcoholOn){
     document.getElementById('startScreen').style.display='none';
     document.getElementById('blockedScreen').style.display='flex';
+    startCountdown();
     return;
   }
   document.getElementById('startScreen').style.display='none';
   initMediaPipe();
 };
-window.goBack=function(){
+
+function startCountdown(){
+  // Reset UI
+  clearInterval(countdownTimer);
+  let remaining=COUNTDOWN_SECONDS;
+  const numEl  =document.getElementById('cdownNum');
+  const secEl  =document.getElementById('cdownSec');
+  const fillEl =document.getElementById('cdownFill');
+  const btnEl  =document.getElementById('retestBtn');
+  numEl.textContent=remaining;
+  secEl.textContent=remaining;
+  fillEl.style.width='100%';
+  btnEl.style.display='none';
+  numEl.style.color='#ef4444';
+
+  countdownTimer=setInterval(()=>{
+    remaining--;
+    numEl.textContent=remaining;
+    secEl.textContent=remaining;
+    const pct=(remaining/COUNTDOWN_SECONDS*100);
+    fillEl.style.width=pct+'%';
+    if(remaining<=0){
+      clearInterval(countdownTimer);
+      numEl.textContent='✓';
+      numEl.style.color='#00c896';
+      btnEl.style.display='block';
+      log('Délai EAD écoulé — retest possible ✓','info');
+    }
+  },1000);
+}
+
+window.retestAlcool=function(){
+  clearInterval(countdownTimer);
+  // Retour à l'écran de choix — simulation d'un nouveau soufflé dans le capteur
+  // Si l'utilisateur choisit "Alcoolisé" → nouveau blocage 30 s
+  // Si l'utilisateur choisit "Normal"    → système démarre
   document.getElementById('blockedScreen').style.display='none';
+  document.getElementById('retestBtn').style.display='none';
+  alcoChoice='normal';
+  document.getElementById('btnNormal').className='choice ok';
+  document.getElementById('btnAlco').className='choice';
+  document.getElementById('startScreen').style.display='flex';
+};
+
+window.goBack=function(){
+  clearInterval(countdownTimer);
+  document.getElementById('blockedScreen').style.display='none';
+  document.getElementById('retestBtn').style.display='none';
   document.getElementById('startScreen').style.display='flex';
   alcoChoice='normal';
   document.getElementById('btnNormal').className='choice ok';
@@ -712,6 +890,11 @@ function doCalibration(ear,headVal,lm,W,H){
     EAR_THR=Math.max(0.15,earBaseline*0.75);
     HEAD_THR=Math.min(0.55,headBaseline+0.08);
     calibDone=true;
+    calibDoneAt=Date.now();
+    // Pré-remplir le buffer PERCLOS avec des "yeux ouverts" pour éviter
+    // un pic PERCLOS=100% dès le 1er clignement après calibration
+    perclosBuffer=new Array(PERCLOS_WIN).fill(0);
+    fatigueFrames=0;
     document.getElementById('calibOverlay').classList.remove('show');
     document.getElementById('calibBadge').style.display='none';
     document.getElementById('calibWait').style.display='none';
@@ -851,6 +1034,14 @@ function setSig(boxId,valId,tagId,val,bad,badLabel,okLabel){
 function processAlerts(eyeDown,headDown,mar,perclos,now){
   if(mar>MAR_THR&&!inYawn){inYawn=true;yawnCount++;log(`Bâillement (MAR=${mar.toFixed(2)})`,'warn')}
   if(mar<=MAR_THR) inYawn=false;
+
+  // Période de grâce post-calibration : buffers PERCLOS et blink rate
+  // ont besoin de quelques secondes pour se stabiliser
+  if(calibDone && (now - calibDoneAt) < POST_CALIB_GRACE_MS){
+    fatigueFrames=0; // ne pas accumuler de frames fatigue pendant la stabilisation
+    return;
+  }
+
   const fatigued=eyeDown||headDown, percCrit=perclos>PERCLOS_ALERT;
   const blinkBad=blinkRate<BLINK_LOW&&blinkRate>0&&calibDone;
 
@@ -879,6 +1070,15 @@ function processAlerts(eyeDown,headDown,mar,perclos,now){
     return;
   }
   if(state==='alerte2'){
+    // Récupération possible depuis Alerte 2 si la personne se réveille
+    if(!fatigued&&!percCrit){
+      recovCount++;
+      log('Récupération depuis Alerte 2 → Conduite normale','info');
+      setState('autorise');
+      fatigueFrames=0;
+      ['aF1','aF2','aF3'].forEach(id=>document.getElementById(id).style.width='0%');
+      return;
+    }
     const el=now-alerte2Start;
     document.getElementById('aF3').style.width=Math.min(100,el/ALERTE3_MS*100)+'%';
     if(el>ALERTE3_MS){log('Seuil critique → Alerte 3 + pilotage autonome','err');setState('alerte3');triggerParking()}
@@ -916,35 +1116,78 @@ function setState(s){
 }
 
 /* ── PARKING + RFID ── */
-const PC=document.getElementById('parkingCanvas');
-const PX=PC.getContext('2d');
-const PW=Math.max(PC.parentElement.clientWidth-26,250), PH=128;
+let PC=document.getElementById('parkingCanvas');
+let PX=PC.getContext('2d');
+let PW=Math.max(PC.parentElement.clientWidth-26,250), PH=128;
 PC.width=PW; PC.height=PH;
-const PAD=8,A1Y=Math.round(PH*.28),A2Y=Math.round(PH*.72),CX=PAD+12;
-const SX=[54,103,152,201,250,299].map(x=>Math.round(x*PW/365));
-const SW=29,SH=18,RY=[A1Y-SH-4,A1Y+5,A2Y-SH-4,A2Y+5];
+let PAD=8,A1Y=Math.round(PH*.28),A2Y=Math.round(PH*.72),CX=PAD+12;
+let SX=[54,103,152,201,250,299].map(x=>Math.round(x*PW/365));
+const SW=29,SH=18; let RY=[A1Y-SH-4,A1Y+5,A2Y-SH-4,A2Y+5];
 let spots=Array.from({length:24},(_,i)=>({
   x:SX[i%6],y:RY[Math.floor(i/6)],occ:false,res:false,row:Math.floor(i/6),col:i%6,
   rfid:`0x${Math.floor(Math.random()*0xFFFFFF).toString(16).toUpperCase().padStart(6,'0')}`
 }));
 let mCar={visible:false,x:0,y:0,wp:[],wpi:0,sp:null,speed:2.0};
 let parkDone=false, rfidFound=false;
+let apPhaseLabel='', apPhaseIcon='🤖';
+
+function reinitParkingVars(w,h){
+  PW=w; PH=h; PAD=8;
+  A1Y=Math.round(PH*.28); A2Y=Math.round(PH*.72); CX=PAD+12;
+  SX=[54,103,152,201,250,299].map(x=>Math.round(x*PW/365));
+  RY=[A1Y-SH-4,A1Y+5,A2Y-SH-4,A2Y+5];
+  spots=Array.from({length:24},(_,i)=>({
+    x:SX[i%6],y:RY[Math.floor(i/6)],occ:false,res:false,row:Math.floor(i/6),col:i%6,
+    rfid:`0x${Math.floor(Math.random()*0xFFFFFF).toString(16).toUpperCase().padStart(6,'0')}`
+  }));
+  mCar={visible:false,x:0,y:0,wp:[],wpi:0,sp:null,speed:2.0};
+}
 
 function triggerParking(){
   if(parkLoopRunning) return;
   setState('parking'); parkCount++;
+
+  // ── 1. Arrêt webcam + boucle de détection ─────────────────────
+  running=false;
+  if(video.srcObject){
+    video.srcObject.getTracks().forEach(t=>t.stop());
+    video.srcObject=null;
+  }
+
+  // ── 2. Afficher l'overlay plein écran ─────────────────────────
+  document.getElementById('autopilotOverlay').classList.add('show');
+  apPhaseLabel='Mode Pilotage Automatique déclenché — Scan RFID en cours…';
+  apPhaseIcon='🤖';
+  logAp('🚨 Alerte 3 — somnolence critique','err');
+  logAp('Conduite humaine suspendue','warn');
+  logAp('Pilotage autonome engagé…','info');
+  logAp('Scan RFID places de parking…','rfid');
+  document.getElementById('apStatusText').textContent='📡 Scan RFID — recherche place de stationnement disponible…';
+
+  // ── 3. Initialiser le grand canvas aérien ─────────────────────
+  const apCanvas=document.getElementById('apParkCanvas');
+  const apW=Math.max(apCanvas.parentElement.clientWidth,400);
+  const apH=300;
+  apCanvas.width=apW; apCanvas.height=apH;
+  PX=apCanvas.getContext('2d');
+  reinitParkingVars(apW,apH);
+
+  // ── 4. Lancer l'animation de stationnement ────────────────────
   parkDone=false; rfidFound=false; parkLoopRunning=true;
-  document.getElementById('resetBtn').classList.remove('show');
   log('Pilotage autonome engagé…','info');
   log('Scan RFID places de parking…','rfid');
-  const free=spots.filter(s=>!s.occ&&!s.res);
-  if(!free.length) spots.forEach(s=>{s.occ=false;s.res=false;});
   const avail=spots.filter(s=>!s.occ&&!s.res);
   const sp=avail[Math.floor(Math.random()*avail.length)]; sp.res=true;
   setTimeout(()=>{
     rfidFound=true;
+    apPhaseLabel=`Place R${sp.row+1}C${sp.col+1} identifiée — Navigation autonome en cours`;
+    apPhaseIcon='📡';
+    logAp(`RFID: ${sp.rfid} — Place R${sp.row+1}C${sp.col+1} libre ✓`,'rfid');
+    logAp(`Navigation autonome → Place R${sp.row+1}C${sp.col+1}`,'info');
     log(`RFID: ${sp.rfid} — Place R${sp.row+1}C${sp.col+1} libre ✓`,'rfid');
     log(`Navigation → Place R${sp.row+1}C${sp.col+1}`,'info');
+    document.getElementById('apStatusText').textContent=
+      `🚗 Place R${sp.row+1}C${sp.col+1} identifiée (RFID: ${sp.rfid}) — Stationnement autonome en cours…`;
     const eX=PW+20;
     let wp=[{x:eX,y:A1Y}];
     if(sp.row<2) wp.push({x:sp.x,y:A1Y},{x:sp.x,y:sp.y+SH/2});
@@ -999,12 +1242,40 @@ function drawParking(){
   const occ=spots.filter(s=>s.occ).length;
   PX.fillStyle='#00c89650'; PX.font='7.5px Inter,sans-serif';
   PX.fillText(`Occupées : ${occ}/24   Libres : ${24-occ}`,PAD,PH-4);
+
+  // Label de phase (visible seulement en mode grand canvas — overlay pilotage)
+  if(PH>200 && apPhaseLabel){
+    // Bandeau de phase en haut du canvas
+    const lh=28;
+    PX.fillStyle='rgba(8,0,20,.82)';
+    PX.fillRect(0,0,PW,lh);
+    PX.fillStyle='#8b5cf6';
+    PX.font='bold 12px Inter,sans-serif';
+    PX.textAlign='center';
+    PX.fillText(apPhaseIcon+' '+apPhaseLabel, PW/2, 18);
+    PX.textAlign='left';
+    // Légende bas-droite
+    PX.font='8px Inter,sans-serif';
+    PX.fillStyle='#ef444490'; PX.fillRect(PW-90,PH-20,10,8);
+    PX.fillStyle='#8b7090';   PX.fillText('Véhicule autonome',PW-77,PH-13);
+    PX.fillStyle='#f59e0b50'; PX.fillRect(PW-90,PH-10,10,8);
+    PX.fillStyle='#8b7090';   PX.fillText('Place réservée',PW-77,PH-3);
+  }
 }
 function onParkDone(){
   parkDone=true;
-  document.getElementById('resetBtn').classList.add('show');
+  parkLoopRunning=false;
+  apPhaseLabel='Stationnement réussi — Système arrêté';
+  apPhaseIcon='✅';
+  // Logs dans les deux journaux
+  logAp('✅ Stationnement autonome réussi','info');
+  logAp('Système arrêté — rechargez pour nouvelle session','info');
   log('Stationnement autonome réussi ✓','info');
+  // Masquer la barre de statut, afficher la carte de fin
+  document.getElementById('apStatusRow').style.display='none';
+  document.getElementById('apDoneCard').classList.add('show');
   drawParking();
+  // Pas de bouton reset — l'utilisateur doit recharger la page
 }
 
 /* ── RESET ── */
@@ -1029,6 +1300,16 @@ function log(msg,type='info'){
   div.innerHTML=`<span class="lts">${ts}</span><span class="${cls}">${msg}</span>`;
   box.appendChild(div); box.scrollTop=box.scrollHeight;
   while(box.children.length>80) box.removeChild(box.firstChild);
+}
+
+/* ── LOG AUTOPILOT ── */
+function logAp(msg,type='info'){
+  const box=document.getElementById('apLogBox');
+  const ts=new Date().toLocaleTimeString('fr-FR',{hour12:false});
+  const div=document.createElement('div');div.className='le';
+  const cls={info:'linfo',warn:'lwarn',err:'lerr',rfid:'lrfid',calib:'lcal'}[type]||'linfo';
+  div.innerHTML=`<span class="lts">${ts}</span><span class="${cls}">${msg}</span>`;
+  box.appendChild(div); box.scrollTop=box.scrollHeight;
 }
 
 /* ── BOOT ── */
