@@ -890,7 +890,7 @@ function doCalibration(ear,headVal,lm,W,H){
     EAR_THR=Math.max(0.15,earBaseline*0.75);
     HEAD_THR=Math.min(0.55,headBaseline+0.08);
     calibDone=true;
-    calibDoneAt=Date.now();
+    calibDoneAt=performance.now(); // même origine que `now` dans loop()
     // Pré-remplir le buffer PERCLOS avec des "yeux ouverts" pour éviter
     // un pic PERCLOS=100% dès le 1er clignement après calibration
     perclosBuffer=new Array(PERCLOS_WIN).fill(0);
@@ -1312,8 +1312,4 @@ function logAp(msg,type='info'){
   box.appendChild(div); box.scrollTop=box.scrollHeight;
 }
 
-/* ── BOOT ── */
-drawParking();
-</script>
-</body>
-</html>
+/* ── BOOT ─�
